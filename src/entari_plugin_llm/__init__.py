@@ -4,7 +4,7 @@ from collections import deque
 from typing import Annotated, Any, TypeAlias, get_args
 
 import openai
-from arclet.entari import BasicConfModel, MessageCreatedEvent, Session, declare_static, metadata, plugin_config
+from arclet.entari import BasicConfModel, MessageCreatedEvent, Session, declare_static, metadata, plugin_config, filter_
 from arclet.entari.config import config_model_validate
 from arclet.entari.event.config import ConfigReload
 from arclet.entari.event.send import SendResponse
@@ -27,6 +27,8 @@ class Config(BasicConfModel):
     """Base URL for the OpenAI API"""
     model: str = "gpt-4"
     """Model to use for the OpenAI API"""
+    prompt: str = ""
+    """Default prompt template"""
 
 
 metadata(
@@ -134,12 +136,14 @@ async def _record(event: SendResponse):
         RECORD.append(event.session.event.sn)
 
 
-@on(MessageCreatedEvent, priority=1000)
+@on(MessageCreatedEvent, priority=1000).if_(filter_.to_me)
 async def run_conversation(session: Session, ctx: Contexts):
     if session.event.sn in RECORD:
         return BLOCK
     msg = session.elements.extract_plain_text()
     messages: list = [{"role": "user", "content": msg, "name": session.user.name}]
+    if _conf.prompt:
+        messages.insert(0, {"role": "system", "content": _conf.prompt})
     final_answer = ""
     for step in range(8):
         response = await client.chat.completions.create(
@@ -205,5 +209,6 @@ async def reload_config(event: ConfigReload):
         return
     new_conf = config_model_validate(Config, event.value)
     _conf.model = new_conf.model
+    _conf.prompt = new_conf.prompt
     await client.close()
     client = openai.AsyncClient(api_key=new_conf.api_key, base_url=new_conf.base_url)
