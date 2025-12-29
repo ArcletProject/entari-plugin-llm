@@ -1,0 +1,42 @@
+[project]
+name = "entari-plugin-llm"
+version = "0.1.0"
+description = "An Entari Plugin for LLM Chat with Function Call"
+authors = [
+    {"name" = "RF-Tar-Railt", "email" = "rf_tar_railt@qq.com"},
+]
+dependencies = [
+    "arclet.entari[yaml,cron,reload,dotenv] >= 0.16.8",
+    "openai>=2.14.0",
+    "docstring-parser>=0.17.0",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {"text" = "MIT"}
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "UP", "C", "T", "PYI", "PT", "Q", "I"]
+ignore = ["C901", "T201", "E731", "E402", "PYI055"]
+
+[tool.pyright]
+pythonVersion = "3.10"
+pythonPlatform = "All"
+typeCheckingMode = "basic"
+
+
+[tool.pdm]
+distribution = true
+[dependency-groups]
+dev = [
+    "entari-plugin-server>=0.5.1",
+    "satori-python-adapter-onebot11>=0.2.7",
+    "ruff>=0.14.10",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
