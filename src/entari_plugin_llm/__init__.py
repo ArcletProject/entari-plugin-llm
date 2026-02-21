@@ -14,6 +14,8 @@ metadata(
 declare_static()
 _suppress_litellm_logging()
 
+from .handlers import chat as chat
+from .handlers import check as check
 from .handlers import command as command
 from .service import llm as llm
 
