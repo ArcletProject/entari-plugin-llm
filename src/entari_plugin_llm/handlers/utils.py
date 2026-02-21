@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 from arclet.entari import Session
 
-from .._handler import LLMSessionManager
+from .manager import LLMSessionManager
 from .._jsondata import get_default_model
 from ..config import _conf
 from ..model import LLMSession

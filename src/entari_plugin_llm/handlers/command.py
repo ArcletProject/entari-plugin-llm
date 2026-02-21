@@ -2,10 +2,11 @@
 from arclet.entari import Reply, Session, command
 from arclet.letoderea import BLOCK, Contexts
 
-from .._handler import LLMSessionManager
 from .._jsondata import set_default_model
 from ..config import get_model_config, get_model_list
 from ..exception import ModelNotFoundError
+from . import chat as chat
+from .manager import LLMSessionManager
 from .utils import render_model_list, render_session_list, select_session
 
 llm_alc = Alconna(

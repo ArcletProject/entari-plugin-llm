@@ -14,8 +14,7 @@ metadata(
 declare_static()
 _suppress_litellm_logging()
 
-from . import listeners as listeners
-from . import matchers as matchers
+from .handlers import command as command
 from .service import llm as llm
 
 __all__ = [
