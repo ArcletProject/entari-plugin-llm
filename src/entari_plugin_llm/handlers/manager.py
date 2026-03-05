@@ -1,11 +1,11 @@
-﻿import json
+import json
 from collections.abc import Sequence
 from typing import Any, overload
 from uuid import uuid4
 
 import litellm
 from arclet.entari import Session, User
-from arclet.letoderea import ExitState
+from arclet.letoderea.exceptions import ExitState, _ExitException
 from arclet.letoderea.typing import Contexts, generate_contexts
 from entari_plugin_database import get_session as get_db_session
 from sqlalchemy import desc, func, select
@@ -75,11 +75,7 @@ class LLMSessionManager:
     @classmethod
     async def _load_messages(cls, user_id: str) -> list[Message]:
         async with get_db_session() as db_session:
-            stmt = (
-                select(SessionContext)
-                .where(SessionContext.session_id == user_id)
-                .order_by(SessionContext.id.asc())
-            )
+            stmt = select(SessionContext).where(SessionContext.session_id == user_id).order_by(SessionContext.id.asc())
             contexts = list((await db_session.scalars(stmt)).all())
         return [context.message for context in contexts]
 
@@ -201,6 +197,7 @@ class LLMSessionManager:
         session: Session,
         model: str | None = None,
         new: bool = False,
+        steps: int = 8,
     ) -> str:
         llm_session = await cls._get_active_session(session.user.id)
         if new or llm_session is None:
@@ -214,14 +211,15 @@ class LLMSessionManager:
 
         messages = await cls._load_messages(llm_session.session_id)
         final_answer = ""
-        for _ in range(8):
+        exit_loop = False
+        for _ in range(steps):
             response = await llm.generate(
                 messages,
                 stream=False,
                 model=model,
                 tools=tools,
                 tool_choice="auto",
-                user=session.user.name,
+                user=f"{session.user.name}@{session.user.id}",
             )
 
             usage = response.get("usage") or {}
@@ -251,14 +249,18 @@ class LLMSessionManager:
                     function_to_call = available_functions[function_name]
                     function_args = json.loads(tool_call.function.arguments)
                     ctx1 = await generate_contexts(LLMToolEvent(), inherit_ctx=ctx)
-                    logger.info(f"Calling tool: {function_name} with args: {function_args}")
+                    logger.debug(f"Calling tool: {function_name} with args: {function_args}")
                     try:
                         resp = await function_to_call.handle(ctx1 | function_args, inner=True)
                         if isinstance(resp, ExitState):
-                            if resp.args[0] is not None:
-                                result: dict[str, Any] = {"ok": True, "data": resp.args[0]}
-                            else:
-                                result = {"ok": False, "error": "No response"}
+                            if resp is ExitState.stop:
+                                continue
+                            result = {"ok": True, "data": "已结束对话"}
+                            exit_loop = True
+                        elif isinstance(resp, _ExitException):
+                            result: dict[str, Any] = {"ok": True, "data": resp.args[0]}
+                            if resp.args[1]:
+                                exit_loop = True
                         else:
                             result = {"ok": True, "data": resp}
                     except Exception as e:
@@ -267,10 +269,16 @@ class LLMSessionManager:
                     tool_message: Message = {
                         "tool_call_id": tool_call.id,
                         "role": "tool",
+                        "name": function_name,
                         "content": json.dumps(result, ensure_ascii=False),
                     }
                     messages.append(tool_message)
                     await cls._persist_message(llm_session.session_id, tool_message)
+                    if exit_loop:
+                        break
+                if exit_loop:
+                    final_answer = "[END_OF_RESPONSE]"
+                    break
                 continue
 
             final_answer = response_message.content or ""

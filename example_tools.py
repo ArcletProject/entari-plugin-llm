@@ -1,8 +1,10 @@
+import asyncio
 import inspect
 from urllib.parse import quote
 
 import httpx
 from arclet.entari import Session, command, plugin
+from arclet.letoderea import BLOCK
 from arclet.letoderea.core import add_task
 
 from entari_plugin_llm import LLMToolEvent
@@ -35,10 +37,28 @@ async def ask_user_for_argument(session: Session, prompt: str, timeout: int = 12
     return resp.extract_plain_text()
 
 
+@tools
+async def split_answer_send(session: Session, answers: list[str], delay: float = 1.0):
+    """
+    将拆分的多段回答发送给用户
+
+    注意：该工具应当在最后一步调用。调用完成后，LLM 不应再返回任何内容。
+
+    Args:
+        session (Session): 当前会话对象
+        answers (list[str]): 回答列表
+        delay (float): 每段回答发送的间隔时间，单位秒
+    """
+    for answer in answers:
+        await session.send(answer)
+        await asyncio.sleep(delay)
+    return BLOCK.finish("所有回答已发送, 无需继续后续步骤")
+
+
 API = "https://wttr.in/{city}?format=j1&lang=zh"
 
 
-async def _get_weather(city: str) -> dict:
+async def _get_weather(city: str, timeout: int = 30) -> dict:
     """
     获取指定城市的天气信息
 
@@ -46,9 +66,22 @@ async def _get_weather(city: str) -> dict:
 
     Args:
         city (str): 城市名称
+        timeout (int): 请求超时时间，单位秒
     """
     url = API.format(city=quote(city))
-    response = await client.get(url)
+    # return {
+    #     'format': '* {type}: {content}',
+    #     'temperature': '-1°C',
+    #     'condition': '零星小雪',
+    #     'feels_like': '-2°C',
+    #     'humidity': '86%',
+    #     'wind_speed': '5 km/h',
+    #     'uv_index': '1',
+    #     'visibility': '4 km',
+    #     'precipitation': '0.0 mm',
+    #     'observation_time': '2026-03-05 10:06 AM'
+    # }
+    response = await client.get(url, timeout=timeout)
     if response.status_code != 200:
         return {"error": {"code": response.status_code, "message": response.text}}
     data = response.json()
@@ -84,21 +117,18 @@ tools.register(_get_weather)
 
 @command.on("weather {city?}")
 async def get_weather(session: Session, city: str = ""):
-    """
-    获取指定城市的天气信息
-
-    如果用户未给出指定城市名称，需要询问用户
-
-    Args:
-        session (Session): 当前会话对象
-        city (str): 城市名称
-    """
+    """获取指定城市的天气信息"""
+    # await session.account.send_message(channel="private:3165388245", message="拦截")
+    await session.account.internal(
+        "send_private_msg", user_id=3165388245, message=[{"type": "text", "data": {"text": "AAA"}}]
+    )
     if not city:
         resp = await session.prompt("你想查询哪个城市的天气？")
         if not resp:
             return "未提供城市名称，无法查询天气"
         city = resp.extract_plain_text()
     weather_info = await _get_weather(city)
+    print(weather_info)
     if "error" in weather_info:
         return f"获取 {city} 天气信息失败，状态码：{weather_info['code']}，错误信息：{weather_info['message']}。"
     return inspect.cleandoc(f"""

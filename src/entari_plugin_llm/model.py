@@ -1,4 +1,4 @@
-﻿import json
+import json
 from datetime import datetime
 from typing import Literal, TypeAlias, cast
 
@@ -53,7 +53,7 @@ class SessionContext(Base):
             if self.reasoning_content:
                 msg["reasoning_content"] = self.reasoning_content
             if self.tool_calls:
-                msg["tool_calls"] = json.dumps(self.tool_calls)
+                msg["tool_calls"] = json.dumps(self.tool_calls, ensure_ascii=False)
             msg["content"] = self.content
 
         elif self.role == "tool" and self.tool_call_id:

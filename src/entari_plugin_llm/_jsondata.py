@@ -39,9 +39,7 @@ def _read_state() -> LLMState:
 
 def _write_state(data: LLMState) -> None:
     path = _state_path()
-    path.write_text(
-        json.dumps(data.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    path.write_text(json.dumps(data.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def get_default_model() -> str | None:

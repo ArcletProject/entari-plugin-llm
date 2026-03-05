@@ -9,28 +9,31 @@ from .exception import ModelNotFoundError
 
 class ScopedModel(BasicConfModel):
     name: str
-    """Model to use for the OpenAI API"""
+    """用于 OpenAI API 的模型"""
     alias: str | None = None
-    """Alias for the model"""
+    """模型的别名"""
     api_key: str | None = None
-    """API key for authentication with the OpenAI API. If None, falls back to global api_key"""
+    """用于使用 OpenAI API 进行身份验证的 API 密钥。如果未设置，则回退到全局 api_key"""
     base_url: str = "https://api.openai.com/v1"
-    """Base URL for the OpenAI API"""
+    """OpenAI API 的接口地址。如果未设置，则回退到全局 base_url"""
     prompt: str = ""
-    """Default prompt template"""
+    """该模型使用的提示词。如果未设置，则回退到全局 prompt"""
     extra: dict[str, Any] = model_field(default_factory=dict)
-    """Extra parameters to pass to the LLM API call"""
+    """传递给 LLM API 调用的额外参数"""
 
 
 class Config(BasicConfModel):
     api_key: str | None = None
-    """Global API key for authentication with the OpenAI API. Used as fallback for models without specific keys"""
+    """用于使用 OpenAI API 进行身份验证的全局 API 密钥。用作没有特定键的模型的后备"""
     base_url: str = "https://api.openai.com/v1"
-    """Global Base URL for the OpenAI API. Used as fallback for models without specific base URLs"""
+    """OpenAI API 的全局接口地址。用作没有特定接口地址的模型的后备"""
     prompt: str = ""
-    """Default prompt template"""
+    """全局提示词。用作没有特定提示词的模型的后备"""
     models: list[ScopedModel] = model_field(default_factory=list)
-    """List of configured models with their individual settings"""
+    """配置模型及其各自设置的列表"""
+    toolcall_max_steps: int = 8
+    """单个会话中工具调用的最大步骤数"""
+    context_length: int = 50
 
 
 _conf = plugin_config(Config)
@@ -45,14 +48,21 @@ def get_model_config(model_name: str | None = None) -> ScopedModel:
 
     for model in _conf.models:
         if model.name == model_name or model.alias == model_name:
-            if model.api_key is None:
-                model.api_key = _conf.api_key
-            if (
-                model.base_url == "https://api.openai.com/v1"
-                and _conf.base_url != "https://api.openai.com/v1"
-            ):
-                model.base_url = _conf.base_url
-            return model
+            model_cp = ScopedModel(
+                name=model.name,
+                alias=model.alias,
+                api_key=model.api_key,
+                base_url=model.base_url,
+                prompt=model.prompt,
+                extra=model.extra,
+            )
+            if not model.api_key and _conf.api_key:
+                model_cp.api_key = _conf.api_key
+            if model.base_url == "https://api.openai.com/v1" and _conf.base_url != "https://api.openai.com/v1":
+                model_cp.base_url = _conf.base_url
+            if not model.prompt and _conf.prompt:
+                model_cp.prompt = _conf.prompt
+            return model_cp
     raise ModelNotFoundError(f"Model {model_name} not found in config.")
 
 

@@ -18,5 +18,3 @@ def _suppress_litellm_logging() -> None:
     import logging
 
     logging.getLogger("LiteLLM").setLevel(logging.WARNING)
-
-

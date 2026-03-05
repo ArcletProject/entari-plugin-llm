@@ -62,8 +62,7 @@ class LLMService(Service):
         system: str | None = None,
         model: str | None = None,
         **kwargs,
-    ) -> litellm.ModelResponse:
-        ...
+    ) -> litellm.ModelResponse: ...
 
     @overload
     async def generate(
@@ -74,8 +73,7 @@ class LLMService(Service):
         system: str | None = None,
         model: str | None = None,
         **kwargs,
-    ) -> litellm.CustomStreamWrapper:
-        ...
+    ) -> litellm.CustomStreamWrapper: ...
 
     @overload
     async def generate(
@@ -86,8 +84,7 @@ class LLMService(Service):
         system: str | None = None,
         model: str | None = None,
         **kwargs,
-    ) -> litellm.ModelResponse | litellm.CustomStreamWrapper:
-        ...
+    ) -> litellm.ModelResponse | litellm.CustomStreamWrapper: ...
 
     async def generate(
         self,
@@ -97,7 +94,7 @@ class LLMService(Service):
         system: str | None = None,
         model: str | None = None,
         **kwargs,
-    ) ->  litellm.ModelResponse | litellm.CustomStreamWrapper:
+    ) -> litellm.ModelResponse | litellm.CustomStreamWrapper:
         if isinstance(message, str):
             message = [{"role": "user", "content": message}]
 
@@ -126,9 +123,9 @@ class LLMService(Service):
             uptime = time.strftime("%H:%M:%S", time.gmtime(time.time() - self.start_time))
             log(
                 "success",
-                f"运行统计: 耗时 [ {uptime} ] | 总请求 [ {self.total_calls} ] | 预估总 Token [ {self.total_tokens} ]"
+                f"运行统计: 耗时 [ {uptime} ] | 总请求 [ {self.total_calls} ] | 预估总 Token [ {self.total_tokens} ]",
             )
 
-llm = LLMService()
 
+llm = LLMService()
 add_service(llm)

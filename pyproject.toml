@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "An Entari Plugin for LLM Chat with Function Call"
 authors = [
     {"name" = "RF-Tar-Railt", "email" = "rf_tar_railt@qq.com"},
+    {"name" = "KomoriDev", "email" = "mute231010@gmail.com"}
 ]
 dependencies = [
     "arclet.entari[yaml,cron,reload,dotenv]>=0.17.0rc3",

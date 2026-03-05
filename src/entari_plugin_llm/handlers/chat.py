@@ -1,4 +1,4 @@
-﻿from collections import deque
+from collections import deque
 
 from arclet.entari import MessageCreatedEvent, Session, filter_
 from arclet.entari.config import config_model_validate
@@ -12,6 +12,7 @@ from .manager import LLMSessionManager
 
 RECORD = deque(maxlen=16)
 
+
 @on(SendResponse)
 async def _record(event: SendResponse):
     if event.result and event.session:
@@ -24,8 +25,9 @@ async def run_conversation(session: Session, ctx: Contexts):
         return BLOCK
 
     msg = session.elements.extract_plain_text()
-    answer = await LLMSessionManager.chat(user_input=msg, ctx=ctx, session=session)
-    await session.send(answer)
+    answer = await LLMSessionManager.chat(user_input=msg, ctx=ctx, session=session, steps=_conf.toolcall_max_steps)
+    if answer != "[END_OF_RESPONSE]":
+        await session.send(answer)
     return BLOCK
 
 
@@ -38,3 +40,5 @@ async def reload_config(event: ConfigReload):
     new_conf = config_model_validate(Config, event.value)
     _conf.models = new_conf.models
     _conf.prompt = new_conf.prompt
+    _conf.context_length = new_conf.context_length
+    _conf.toolcall_max_steps = new_conf.toolcall_max_steps

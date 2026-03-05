@@ -21,11 +21,7 @@ async def _():
         return
 
     matched = next(
-        (
-            m
-            for m in _conf.models
-            if m.name == default_model or m.alias == default_model
-        ),
+        (m for m in _conf.models if m.name == default_model or m.alias == default_model),
         None,
     )
     if matched is None:
@@ -38,4 +34,3 @@ async def _():
     if matched.name != default_model:
         set_default_model(matched.name)
         logger.info(f"已将本地默认模型标准化为模型名: {matched.name}")
-

@@ -11,6 +11,7 @@ from tarina.generic import get_origin, origin_is_union
 from typing_extensions import Doc
 
 from .._types import JSON_TYPE
+from ..log import logger
 
 mapping = {
     str: "string",
@@ -70,6 +71,8 @@ def _register_tool(_, sub: Subscriber):
             "type": mapping.get(get_origin(t), "object"),
             "description": documentation,
         }
+        if get_origin(t) is list:
+            properties[param.name]["items"] = {"type": mapping.get(get_args(t)[0], "object")}
 
     tools.append(
         {
@@ -88,4 +91,5 @@ def _register_tool(_, sub: Subscriber):
     )
     available_functions[sub.__name__] = sub
     sub._attach_disposes(lambda s: available_functions.pop(s.__name__, None))  # type: ignore
+    logger.debug(f"Registered tool: {sub.__name__}")
     return True
