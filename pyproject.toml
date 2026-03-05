@@ -7,11 +7,10 @@ authors = [
     {"name" = "KomoriDev", "email" = "mute231010@gmail.com"}
 ]
 dependencies = [
-    "arclet.entari[yaml,cron,reload,dotenv]>=0.17.0rc3",
-    "openai>=2.14.0",
+    "arclet.entari[yaml,cron,reload,dotenv]>=0.17.1",
     "docstring-parser>=0.17.0",
     "litellm>=1.80.9",
-    "entari-plugin-database>=0.2.3",
+    "entari-plugin-database>=0.2.4",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
@@ -19,8 +18,8 @@ license = {"text" = "MIT"}
 
 [dependency-groups]
 dev = [
-    "entari-plugin-server>=0.5.1",
-    "satori-python-adapter-onebot11>=0.2.7",
+    "entari-plugin-server>=0.6.2",
+    "satori-python-adapter-onebot11>=0.4.2",
     "ruff>=0.14.10",
 ]
 google = [
