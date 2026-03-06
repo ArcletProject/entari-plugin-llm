@@ -1,5 +1,5 @@
 from arclet.alconna import Alconna, Args, MultiVar, Option, Subcommand, store_true
-from arclet.entari import Reply, Session, command
+from arclet.entari import MessageChain, Reply, Session, command
 from arclet.letoderea import BLOCK, Contexts
 
 from .._jsondata import set_default_model
@@ -74,16 +74,16 @@ async def _(
         if answer != "[END_OF_RESPONSE]":
             await session.send(answer)
     except ModelNotFoundError as e:
-        await session.send(str(e))
+        await session.send(MessageChain(str(e)))
     except Exception as e:
-        await session.send(str(e))
+        await session.send(MessageChain(str(e)))
 
     return BLOCK
 
 
 @llm_disp.assign("new_cmd")
 async def _(session: Session):
-    new_session = await LLMSessionManager.create_new_session(session.user)
+    new_session = await LLMSessionManager.create_new_session(f"{session.account.platform}@{session.user.id}")
     await session.send(f"以创建并切换到新会话\n会话ID: {new_session.session_id}")
     return BLOCK
 
@@ -97,7 +97,7 @@ async def _(session: Session, session_id: command.Match[str]):
 
         session_id.result = selected
 
-    switched = await LLMSessionManager.switch(session.user, session_id.result)
+    switched = await LLMSessionManager.switch(f"{session.account.platform}@{session.user.id}", session_id.result)
     await session.send("切换成功" if switched else "未找到对应会话")
     return BLOCK
 
@@ -110,11 +110,20 @@ async def _(session: Session, session_id: command.Match[str]):
             return BLOCK
 
         session_id.result = selected
-
-    deleted = await LLMSessionManager.delete(session.user, session_id.result)
+    info = await LLMSessionManager.get_current_session_info(f"{session.account.platform}@{session.user.id}")
+    deleted = await LLMSessionManager.delete(f"{session.account.platform}@{session.user.id}", session_id.result)
     if deleted:
-        await LLMSessionManager.create_new_session(session.user)
-        await session.send("删除成功，已自动创建新会话")
+        rows = await LLMSessionManager.list_sessions(f"{session.account.platform}@{session.user.id}")
+        if not rows:
+            await LLMSessionManager.create_new_session(f"{session.account.platform}@{session.user.id}")
+            await session.send("删除成功，已自动创建新会话")
+        elif info and info["session_id"] == session_id.result:
+            switched = await LLMSessionManager.switch(
+                f"{session.account.platform}@{session.user.id}", rows[0].session_id
+            )
+            await session.send("删除成功，已切换到最近的会话" if switched else "删除成功，但未找到对应会话")
+        else:
+            await session.send("删除成功，当前会话列表：\n" + render_session_list(rows))
     else:
         await session.send("未找到对应会话")
     return BLOCK
@@ -122,7 +131,7 @@ async def _(session: Session, session_id: command.Match[str]):
 
 @llm_disp.assign("session", priority=20)
 async def _(session: Session):
-    info = await LLMSessionManager.get_current_session_info(session.user)
+    info = await LLMSessionManager.get_current_session_info(f"{session.account.platform}@{session.user.id}")
     if info is None:
         await session.send("当前没有活动会话")
         return BLOCK
@@ -144,7 +153,7 @@ async def _(session: Session):
 
 @llm_disp.assign("session.list")
 async def _(session: Session):
-    rows = await LLMSessionManager.list_sessions(session.user)
+    rows = await LLMSessionManager.list_sessions(f"{session.account.platform}@{session.user.id}")
 
     if not rows:
         await session.send("暂无会话")

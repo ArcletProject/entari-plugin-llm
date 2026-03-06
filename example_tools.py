@@ -38,7 +38,7 @@ async def ask_user_for_argument(session: Session, prompt: str, timeout: int = 12
 
 
 @tools
-async def split_answer_send(session: Session, answers: list[str], delay: float = 1.0):
+async def split_answer_send(session: Session, answers: list[str], delays: list[float]):
     """
     将拆分的多段回答发送给用户
 
@@ -46,10 +46,10 @@ async def split_answer_send(session: Session, answers: list[str], delay: float =
 
     Args:
         session (Session): 当前会话对象
-        answers (list[str]): 回答列表
-        delay (float): 每段回答发送的间隔时间，单位秒
+        answers (list[str | float]): 回答列表, 每段回答可以是字符串或数字
+        delays (float): 每段回答发送后的间隔时间，单位秒。尽量保证每段的发送间隔不相同，并且大于 1 秒
     """
-    for answer in answers:
+    for answer, delay in zip(answers, delays):
         await session.send(answer)
         await asyncio.sleep(delay)
     return BLOCK.finish("所有回答已发送, 无需继续后续步骤")

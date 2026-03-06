@@ -13,6 +13,7 @@ basic:
       - httpcore._trace
       - httpcore._trace
       - aiosqlite.core
+      - markdown_it.*
   prefix:
     - /
   schema: true
@@ -50,6 +51,8 @@ plugins:
       2. 如果信息不足以回答问题，请礼貌地告知用户需要更多信息。
       3. 如果你的回答超过了30字，请将你的回答进行分段，然后调用 `split_answer_send` 工具将多段回答进行发送。
       4. 然后，语气表现的可爱一些。
+    .handlers.chat:
+      foo: bar
 
   example_tools: {}
   entari_plugin_server:
@@ -59,3 +62,5 @@ plugins:
 adapters:
   - $path: '@onebot11.reverse'
     endpoint: ws
+#  - $path: '@console'
+#    logger_id: "$logger_id"

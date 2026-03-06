@@ -42,7 +42,7 @@ def render_model_list() -> str:
 
 
 async def select_session(session: Session) -> str | None:
-    rows = await LLMSessionManager.list_sessions(session.user)
+    rows = await LLMSessionManager.list_sessions(f"{session.account.platform}@{session.user.id}")
     if not rows:
         await session.send("暂无会话")
         return None

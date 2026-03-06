@@ -21,6 +21,7 @@ dev = [
     "entari-plugin-server>=0.6.2",
     "satori-python-adapter-onebot11>=0.4.2",
     "ruff>=0.14.10",
+    "satori-python-adapter-console>=0.5.1",
 ]
 google = [
     "litellm[google]>=1.81.13",

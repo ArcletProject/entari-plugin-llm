@@ -1,6 +1,6 @@
 from collections import deque
 
-from arclet.entari import MessageCreatedEvent, Session, filter_
+from arclet.entari import MessageChain, MessageCreatedEvent, Session, filter_
 from arclet.entari.config import config_model_validate
 from arclet.entari.event.config import ConfigReload
 from arclet.entari.event.send import SendResponse
@@ -8,6 +8,7 @@ from arclet.letoderea import BLOCK, on
 from arclet.letoderea.typing import Contexts
 
 from ..config import Config, _conf
+from ..exception import ModelNotFoundError
 from .manager import LLMSessionManager
 
 RECORD = deque(maxlen=16)
@@ -25,9 +26,14 @@ async def run_conversation(session: Session, ctx: Contexts):
         return BLOCK
 
     msg = session.elements.extract_plain_text()
-    answer = await LLMSessionManager.chat(user_input=msg, ctx=ctx, session=session, steps=_conf.toolcall_max_steps)
-    if answer != "[END_OF_RESPONSE]":
-        await session.send(answer)
+    try:
+        answer = await LLMSessionManager.chat(user_input=msg, ctx=ctx, session=session, steps=_conf.toolcall_max_steps)
+        if answer != "[END_OF_RESPONSE]":
+            await session.send(answer)
+    except ModelNotFoundError as e:
+        await session.send(MessageChain(str(e)))
+    except Exception as e:
+        await session.send(MessageChain(str(e)))
     return BLOCK
 
 

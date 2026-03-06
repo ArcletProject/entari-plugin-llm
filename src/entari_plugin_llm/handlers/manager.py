@@ -4,7 +4,7 @@ from typing import Any, overload
 from uuid import uuid4
 
 import litellm
-from arclet.entari import Session, User
+from arclet.entari import Session
 from arclet.letoderea.exceptions import ExitState, _ExitException
 from arclet.letoderea.typing import Contexts, generate_contexts
 from entari_plugin_database import get_session as get_db_session
@@ -123,20 +123,20 @@ class LLMSessionManager:
             llm_session.topic = user_session.topic
 
     @classmethod
-    async def create_new_session(cls, user: User) -> LLMSession:
-        return await cls._create_session(user_id=user.id, topic="新对话")
+    async def create_new_session(cls, user_id: str) -> LLMSession:
+        return await cls._create_session(user_id=user_id, topic="新对话")
 
     @classmethod
-    async def switch(cls, user: User, session_id: str) -> bool:
+    async def switch(cls, user_id: str, session_id: str) -> bool:
         async with get_db_session() as db_session:
             target = await db_session.get(LLMSession, session_id)
-            if target is None or target.user_id != user.id:
+            if target is None or target.user_id != user_id:
                 return False
 
             if target.is_active:
                 return True
 
-            active_stmt = select(LLMSession).where(LLMSession.user_id == user.id, LLMSession.is_active.is_(True))
+            active_stmt = select(LLMSession).where(LLMSession.user_id == user_id, LLMSession.is_active.is_(True))
             active_sessions = (await db_session.scalars(active_stmt)).all()
             for active in active_sessions:
                 active.is_active = False
@@ -145,21 +145,21 @@ class LLMSessionManager:
             return True
 
     @classmethod
-    async def delete(cls, user: User, session_id: str) -> bool:
+    async def delete(cls, user_id: str, session_id: str) -> bool:
         async with get_db_session() as db_session:
             user_session = await db_session.get(LLMSession, session_id)
-            if user_session is None or user_session.user_id != user.id:
+            if user_session is None or user_session.user_id != user_id:
                 return False
             await db_session.delete(user_session)
             await db_session.commit()
             return True
 
     @classmethod
-    async def get_current_session_info(cls, user: User) -> dict[str, Any] | None:
+    async def get_current_session_info(cls, user_id: str) -> dict[str, Any] | None:
         async with get_db_session() as db_session:
             stmt = (
                 select(LLMSession)
-                .where(LLMSession.user_id == user.id, LLMSession.is_active.is_(True))
+                .where(LLMSession.user_id == user_id, LLMSession.is_active.is_(True))
                 .order_by(desc(LLMSession.created_at))
                 .limit(1)
             )
@@ -184,9 +184,9 @@ class LLMSessionManager:
             }
 
     @classmethod
-    async def list_sessions(cls, user: User) -> Sequence[LLMSession]:
+    async def list_sessions(cls, user_id: str) -> Sequence[LLMSession]:
         async with get_db_session() as db_session:
-            stmt = select(LLMSession).where(LLMSession.user_id == user.id).order_by(desc(LLMSession.created_at))
+            stmt = select(LLMSession).where(LLMSession.user_id == user_id).order_by(desc(LLMSession.created_at))
             return list((await db_session.scalars(stmt)).all())
 
     @classmethod
@@ -199,14 +199,20 @@ class LLMSessionManager:
         new: bool = False,
         steps: int = 8,
     ) -> str:
-        llm_session = await cls._get_active_session(session.user.id)
+        llm_session = await cls._get_active_session(f"{session.account.platform}@{session.user.id}")
         if new or llm_session is None:
-            llm_session = await cls._create_session(user_id=session.user.id, user_input=user_input, model=model)
+            llm_session = await cls._create_session(
+                user_id=f"{session.account.platform}@{session.user.id}", user_input=user_input, model=model
+            )
 
         if llm_session.topic == "新对话":
             await cls._refresh_topic(llm_session, user_input=user_input, model=model)
 
-        user_message: Message = {"role": "user", "content": user_input, "name": session.user.name}
+        user_message: Message = {
+            "role": "user",
+            "content": user_input,
+            "name": f"{session.user.name}@{session.user.id}",
+        }
         await cls._persist_message(llm_session.session_id, user_message)
 
         messages = await cls._load_messages(llm_session.session_id)
@@ -217,7 +223,7 @@ class LLMSessionManager:
                 messages,
                 stream=False,
                 model=model,
-                tools=tools,
+                tools=tools.copy(),
                 tool_choice="auto",
                 user=f"{session.user.name}@{session.user.id}",
             )
@@ -234,8 +240,9 @@ class LLMSessionManager:
             assistant_message: Message = {
                 "role": "assistant",
                 "content": response_message.content,
-                "tool_calls": [tc.model_dump() for tc in tool_calls] if tool_calls else None,
             }
+            if tool_calls:
+                assistant_message["tool_calls"] = [tc.model_dump() for tc in tool_calls]
             messages.append(assistant_message)
             await cls._persist_message(llm_session.session_id, assistant_message)
 
