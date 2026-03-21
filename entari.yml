@@ -55,6 +55,8 @@ plugins:
       foo: bar
 
   example_tools: {}
+  zssm: {}
+
   entari_plugin_server:
     direct_adapter: true
     host: localhost

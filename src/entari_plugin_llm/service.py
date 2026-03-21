@@ -1,5 +1,5 @@
 import time
-from typing import Literal, overload
+from typing import Any, Literal, TypeVar, overload
 
 import litellm
 from arclet.entari import add_service
@@ -9,7 +9,10 @@ from launart.status import Phase
 from ._callback import TokenUsageHandler
 from ._types import Message
 from .config import get_model_config
+from .json_output import OutputType, StructuredModelResponse, parse_output
 from .log import log
+
+TOutput = TypeVar("TOutput")
 
 
 class LLMService(Service):
@@ -61,6 +64,7 @@ class LLMService(Service):
         stream: Literal[False] = False,
         system: str | None = None,
         model: str | None = None,
+        output: None = None,
         **kwargs,
     ) -> litellm.ModelResponse: ...
 
@@ -72,8 +76,33 @@ class LLMService(Service):
         stream: Literal[True],
         system: str | None = None,
         model: str | None = None,
+        output: type[TOutput] | None = None,
         **kwargs,
     ) -> litellm.CustomStreamWrapper: ...
+
+    @overload
+    async def generate(
+        self,
+        message: str | list[Message],
+        *,
+        stream: Literal[False] = False,
+        system: str | None = None,
+        model: str | None = None,
+        output: Literal["json_object"] | dict[str, Any],
+        **kwargs,
+    ) -> StructuredModelResponse[Any]: ...
+
+    @overload
+    async def generate(
+        self,
+        message: str | list[Message],
+        *,
+        stream: Literal[False] = False,
+        system: str | None = None,
+        model: str | None = None,
+        output: type[TOutput],
+        **kwargs,
+    ) -> StructuredModelResponse[TOutput]: ...
 
     @overload
     async def generate(
@@ -83,6 +112,7 @@ class LLMService(Service):
         stream: bool,
         system: str | None = None,
         model: str | None = None,
+        output: OutputType | None = None,
         **kwargs,
     ) -> litellm.ModelResponse | litellm.CustomStreamWrapper: ...
 
@@ -93,10 +123,22 @@ class LLMService(Service):
         stream: bool = False,
         system: str | None = None,
         model: str | None = None,
+        output: OutputType | None = None,
         **kwargs,
     ) -> litellm.ModelResponse | litellm.CustomStreamWrapper:
         if isinstance(message, str):
             message = [{"role": "user", "content": message}]
+
+        if output is not None and stream:
+            raise ValueError("output is not supported when stream=True")
+
+        if output is not None:
+            json_system_hint = (
+                "Return valid JSON only. Do not include markdown code fences or any additional explanation."
+            )
+            system = f"{system}\n\n{json_system_hint}" if system else json_system_hint
+
+            kwargs["response_format"] = {"type": "json_object"}
 
         payload = self._build_payload(
             messages=message,
@@ -107,6 +149,14 @@ class LLMService(Service):
         )
 
         response = await litellm.acompletion(**payload)
+
+        if output is not None:
+            if isinstance(response, litellm.CustomStreamWrapper):
+                raise ValueError("output is not supported when stream=True")
+
+            content = response.choices[0].message.content
+            parsed = parse_output(content, output)
+            return StructuredModelResponse.from_model_response(response, parsed)
 
         return response
 
