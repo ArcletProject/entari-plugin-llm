@@ -22,6 +22,8 @@ dev = [
     "satori-python-adapter-onebot11>=0.4.2",
     "ruff>=0.14.10",
     "satori-python-adapter-console>=0.5.1",
+    "agno>=2.5.8",
+    "ddgs>=9.11.2",
 ]
 google = [
     "litellm[google]>=1.81.13",

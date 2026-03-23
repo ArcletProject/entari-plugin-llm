@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from arclet.entari import Session, command
+from arclet.entari import MessageChain, Session, command
 from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import Contexts
 
@@ -89,8 +89,8 @@ class Output:
     block: bool
 
 
-@command.command("zssm [content:str]")
-async def _(content: command.Match[str], ctx: Contexts, session: Session):
+@command.command("zssm <...content>")
+async def _(content: command.Match[MessageChain], ctx: Contexts, session: Session):
     user_prompt = ""
 
     if reply := ctx.get(ITEM_MESSAGE_REPLY):

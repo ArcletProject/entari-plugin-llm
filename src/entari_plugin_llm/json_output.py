@@ -28,6 +28,8 @@ def parse_output(content: str | None, output: OutputType) -> Any:
     if content is None:
         raise RuntimeError("model output is empty")
 
+    if content.startswith("```json"):
+        content = content[len("```json"):].rstrip("```").strip()
     data = json.loads(content)
 
     if output == "json_object" or isinstance(output, dict):

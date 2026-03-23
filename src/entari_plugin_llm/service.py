@@ -5,6 +5,7 @@ import litellm
 from arclet.entari import add_service
 from launart import Launart, Service
 from launart.status import Phase
+from litellm.types.utils import Choices
 
 from ._callback import TokenUsageHandler
 from ._types import Message
@@ -154,7 +155,9 @@ class LLMService(Service):
             if isinstance(response, litellm.CustomStreamWrapper):
                 raise ValueError("output is not supported when stream=True")
 
-            content = response.choices[0].message.content
+            choice = response.choices[0]
+            assert isinstance(choice, Choices)
+            content = choice.message.content
             parsed = parse_output(content, output)
             return StructuredModelResponse.from_model_response(response, parsed)
 
