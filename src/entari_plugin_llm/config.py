@@ -34,7 +34,7 @@ class Config(BasicConfModel):
     toolcall_max_steps: int = 8
     """单个会话中工具调用的最大步骤数"""
     context_length: int = 50
-
+    """上下文长度"""
 
 _conf = plugin_config(Config)
 

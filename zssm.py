@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from arclet.entari import MessageChain, Session, command
+from arclet.entari import Image, MessageChain, Session, command
 from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import Contexts
 
@@ -89,9 +89,10 @@ class Output:
     block: bool
 
 
-@command.command("zssm <...content>")
+@command.command("zssm [...content]")
 async def _(content: command.Match[MessageChain], ctx: Contexts, session: Session):
     user_prompt = ""
+    img_chain: MessageChain[Image] = MessageChain([])
 
     if reply := ctx.get(ITEM_MESSAGE_REPLY):
         user_prompt += f"<type: text>{reply.origin.content}</type: text>"
@@ -101,6 +102,17 @@ async def _(content: command.Match[MessageChain], ctx: Contexts, session: Sessio
 
     if not user_prompt:
         await session.send("请回复或输入内容", reply_to=True)
+
+    if reply and MessageChain(reply.origin.message).has(Image):
+        img_chain.extend(MessageChain(reply.origin.message).include(Image))
+
+    if content.available and content.result.has(Image):
+        img_chain.extend(content.result.get(Image))
+
+    img = img_chain.map(lambda x: x.src)
+    for url in img[:2]:
+        img_content = await llm.vision(url)
+        user_prompt += f"<type: image, id: {hash(url)}>{img_content}\n</type: image>"
 
     response = await llm.generate(user_prompt, system=SYSTEM_PROMPT, output=Output)
 
