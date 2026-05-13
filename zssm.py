@@ -112,7 +112,7 @@ async def _(content: command.Match[MessageChain], ctx: Contexts, session: Sessio
     img = img_chain.map(lambda x: x.src)
     for url in img[:2]:
         img_content = await llm.vision(url)
-        user_prompt += f"<type: image, id: {hash(url)}>{img_content}\n</type: image>"
+        user_prompt += f"<type: image, id: {hash(url)}>{img_content.choices[0].message.content}\n</type: image>"
 
     response = await llm.generate(user_prompt, system=SYSTEM_PROMPT, output=Output)
 

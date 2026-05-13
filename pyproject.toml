@@ -24,6 +24,7 @@ dev = [
     "satori-python-adapter-console>=0.5.1",
     "agno>=2.5.8",
     "ddgs>=9.11.2",
+    "satori-python-adapter-milky>=0.3.1",
 ]
 google = [
     "litellm[google]>=1.81.13",

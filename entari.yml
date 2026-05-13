@@ -30,27 +30,33 @@ plugins:
   ::auto_reload:
     watch_config: true
   entari_plugin_llm:
-    api_key: ${{ env.get('OPENAI_API_KEY', None) }}
-    base_url: https://api.openai.com/v1
+    api_key: ${{ env.OPENAI_API_KEY }}
+    base_url: http://123.235.23.38:8317/v1
     models:
-      - name: "deepseek/deepseek-v3"
-        alias: "deepseek-v3"
-        api_key: ${{env.DEEPSEEK_API_KEY }}
-        base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-#      - name: "deepseek/deepseek-chat"
-#        api_key: ${{env.DEEPSEEK_API_KEY }}
-#        base_url: https://api.deepseek.com
-#      - name: "gemini/gemini-pro"
-#        api_key: ${{ env.get('GEMINI_API_KEY', None) }}
-#        base_url: https://generativelanguage.googleapis.com
-#      - name: "gpt-4.1-mini"
-#        alias: "gpt"
+      # - name: "deepseek/deepseek-v3"
+      #   alias: "deepseek-v3"
+      #   api_key: ${{env.DEEPSEEK_API_KEY }}
+      #   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      - name: "deepseek/deepseek-v4-flash"
+        api_key: ${{ env.DEEPSEEK_API_KEY }}
+        base_url: https://api.deepseek.com
+
+      - name: "gpt-5.2"
+        alias: "gpt"
+
+      - name: "xiaomi_mimo/mimo-v2.5"
+        alias: "mimo-v2.5"
+        api_key: ${{ env.MIMO_API_KEY }}
+        base_url: "https://token-plan-cn.xiaomimimo.com/v1"
+
+    tools:
+      ::image_vision: {}
 
     prompt: |
       1. 你是一个由用户提供信息并回答问题的智能助手。请根据用户提供的信息，尽可能准确和简洁地回答他们的问题。
       2. 如果信息不足以回答问题，请礼貌地告知用户需要更多信息。
-      3. 如果你的回答超过了30字，请将你的回答进行分段，然后调用 `split_answer_send` 工具将多段回答进行发送。
-      4. 然后，语气表现的可爱一些。
+      3. 然后，语气表现的可爱一些。
+
     .handlers.chat:
       foo: bar
 
@@ -61,8 +67,9 @@ plugins:
     direct_adapter: true
     host: localhost
     port: ${{ env.PORT }}
-adapters:
-  - $path: '@onebot11.reverse'
-    endpoint: ws
-#  - $path: '@console'
-#    logger_id: "$logger_id"
+    adapters:
+      - $path: '@onebot11.reverse'
+        endpoint: ws
+      - $path: "@milky.main"
+        endpoint: "http://localhost:3010"
+

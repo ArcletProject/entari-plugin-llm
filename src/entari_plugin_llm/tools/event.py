@@ -1,7 +1,7 @@
 import inspect
 from typing import Annotated, Any, get_args
 
-from arclet.entari import MessageCreatedEvent
+from arclet.entari import MessageCreatedEvent, plugin
 from arclet.entari.config.dc_schema import _MISSING, SchemaGenerator
 from arclet.letoderea import Subscriber, define
 from arclet.letoderea.provider import get_providers
@@ -25,7 +25,7 @@ class LLMToolEvent:
 
 tools_pub = define(LLMToolEvent, name="tools_pub")
 tools_pub.bind(*get_providers(MessageCreatedEvent))
-
+tool_dispatch = plugin.dispatch(LLMToolEvent)
 
 tools = []
 available_functions: dict[str, Subscriber[JSON_TYPE]] = {}
@@ -86,3 +86,4 @@ def _register_tool(_, sub: Subscriber):
     )  # type: ignore
     logger.debug(f"Registered tool: {sub.__name__}")
     return True
+

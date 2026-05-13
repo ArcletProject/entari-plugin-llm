@@ -35,6 +35,40 @@ class Config(BasicConfModel):
     """单个会话中工具调用的最大步骤数"""
     context_length: int = 50
     """上下文长度"""
+    tools: dict[str, dict[str, Any]] = model_field(default_factory=dict)
+    """工具"""
+
+    def _reload_tools(self):
+        loaded_tools: dict[str, dict[str, Any]] = {}
+
+        for key, value in self.tools.items():
+            if key.startswith("$"):
+                loaded_tools[key] = value
+                continue
+
+            tool_config = dict(value)
+            new_key = key
+
+            if key.startswith("~"):
+                new_key = key[1:]
+                if "$disable" not in tool_config or isinstance(tool_config["$disable"], bool):
+                    tool_config["$disable"] = True
+            elif key.startswith("?"):
+                new_key = key[1:]
+                tool_config["$optional"] = True
+
+            if key.startswith("::"):
+                new_key =  new_key.replace("::", "entari_plugin_llm.tools.builtins.")
+
+            if tool_config.get("$disable") is True:
+                continue
+
+            loaded_tools[new_key] = tool_config
+
+        self.tools = loaded_tools
+
+    def __post_init__(self):
+        self._reload_tools()
 
 _conf = plugin_config(Config)
 

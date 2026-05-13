@@ -1,8 +1,9 @@
-from arclet.entari import declare_static, metadata
+from arclet.entari import declare_static, metadata, plugin
 
-from .config import Config
-from .events import LLMToolEvent as LLMToolEvent
+from .config import Config, _conf
 from .log import _suppress_litellm_logging
+from .tools import LLMToolEvent as LLMToolEvent
+from .tools import tool_dispatch as tool_dispatch
 
 metadata(
     name="entari-plugin-llm",
@@ -16,6 +17,9 @@ metadata(
 )
 declare_static()
 _suppress_litellm_logging()
+
+for tool in _conf.tools:
+    plugin.load_plugin(tool)
 
 from .handlers import chat as chat
 from .handlers import check as check
