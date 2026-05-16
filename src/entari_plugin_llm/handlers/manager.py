@@ -4,13 +4,14 @@ from typing import Any, overload
 from uuid import uuid4
 
 import litellm
-from arclet.entari import Session
+from arclet.entari import Image, MessageChain, Session, Text
 from arclet.letoderea.exceptions import ExitState, _ExitException
 from arclet.letoderea.typing import Contexts, generate_contexts
 from entari_plugin_database import get_session as get_db_session
 from sqlalchemy import desc, func, select
 
 from .._types import Message
+from ..config import get_model_config
 from ..log import logger
 from ..model import LLMSession, SessionContext
 from ..service import llm
@@ -73,9 +74,13 @@ class LLMSessionManager:
         return user_session
 
     @classmethod
-    async def _load_messages(cls, user_id: str) -> list[Message]:
+    async def _load_messages(cls, session_id: str) -> list[Message]:
         async with get_db_session() as db_session:
-            stmt = select(SessionContext).where(SessionContext.session_id == user_id).order_by(SessionContext.id.asc())
+            stmt = (
+                select(SessionContext)
+                .where(SessionContext.session_id == session_id)
+                .order_by(SessionContext.id.asc())
+            )
             contexts = list((await db_session.scalars(stmt)).all())
         return [context.message for context in contexts]
 
@@ -121,6 +126,33 @@ class LLMSessionManager:
             user_session.topic = await cls._generate_topic(user_input=user_input, model=model)
             await db_session.commit()
             llm_session.topic = user_session.topic
+
+    @classmethod
+    async def _build_user_message(
+        cls,
+        message: MessageChain,
+        *,
+        session: Session,
+        model: str | None = None,
+    ) -> Message:
+        content = []
+        model = model or get_model_config().name
+
+        if message.has(Text):
+            content.append({"type": "text", "text": message.extract_plain_text()})
+
+        if message.has(Image) and litellm.supports_vision(model):
+            img_chain = message.include(Image)
+            for img in img_chain:
+                content.append({"type": "image_url", "image_url": {"url": img.src}})
+
+        user_message: Message = {
+            "role": "user",
+            "content": content,
+            "name": f"{session.user.name}@{session.user.id}",
+        }
+
+        return user_message
 
     @classmethod
     async def create_new_session(cls, user_id: str) -> LLMSession:
@@ -192,27 +224,27 @@ class LLMSessionManager:
     @classmethod
     async def chat(
         cls,
-        user_input: str,
-        ctx: Contexts,
+        user_prompt: MessageChain,
+        *,
         session: Session,
+        ctx: Contexts,
         model: str | None = None,
         new: bool = False,
         steps: int = 8,
     ) -> str:
+        user_message = await cls._build_user_message(user_prompt, session=session, model=model)
+
         llm_session = await cls._get_active_session(f"{session.account.platform}@{session.user.id}")
         if new or llm_session is None:
             llm_session = await cls._create_session(
-                user_id=f"{session.account.platform}@{session.user.id}", user_input=user_input, model=model
+                user_id=f"{session.account.platform}@{session.user.id}",
+                user_input=user_prompt.extract_plain_text(),
+                model=model,
             )
 
         if llm_session.topic == "新对话":
-            await cls._refresh_topic(llm_session, user_input=user_input, model=model)
+            await cls._refresh_topic(llm_session, user_input=user_prompt.extract_plain_text(), model=model)
 
-        user_message: Message = {
-            "role": "user",
-            "content": user_input,
-            "name": f"{session.user.name}@{session.user.id}",
-        }
         await cls._persist_message(llm_session.session_id, user_message)
 
         messages = await cls._load_messages(llm_session.session_id)

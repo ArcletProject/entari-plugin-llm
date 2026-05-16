@@ -1,5 +1,6 @@
 from arclet.alconna import Alconna, Args, MultiVar, Option, Subcommand, store_true
-from arclet.entari import MessageChain, Reply, Session, command
+from arclet.entari import MessageChain, Session, command
+from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import BLOCK, Contexts
 
 from .._jsondata import set_default_model
@@ -44,29 +45,30 @@ llm_disp = command.mount(llm_alc)
 async def _(
     ctx: Contexts,
     session: Session,
-    content: command.Match[tuple[str, ...]],
+    content: command.Match[MessageChain],
     new_opt: command.Query[bool] = command.Query("new_opt.value"),
     model: command.Query[str] = command.Query("model.model"),
 ):
-    reply: Reply | None = ctx.get("$message_reply")
+    user_prompt = MessageChain([])
 
-    user_input = " ".join(content.result) if content.available else ""
+    if reply := ctx.get(ITEM_MESSAGE_REPLY):
+        user_prompt += reply.origin.message
 
-    if reply:
-        user_input = f"{user_input} {reply.origin.content}".strip()
+    if content.available:
+        user_prompt += content.result
 
-    if not user_input:
+    if not user_prompt:
         resp = await session.prompt("需要我为你做些什么？")
         if not resp:
             await session.send("等待超时")
             return BLOCK
-        user_input = resp.extract_plain_text()
+        user_prompt = resp
 
     try:
         answer = await LLMSessionManager.chat(
-            user_input=user_input,
-            ctx=ctx,
+            user_prompt,
             session=session,
+            ctx=ctx,
             model=model.result if model.available else None,
             new=new_opt.result,
             steps=_conf.toolcall_max_steps,

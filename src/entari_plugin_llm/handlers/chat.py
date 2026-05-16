@@ -25,9 +25,13 @@ async def run_conversation(session: Session, ctx: Contexts):
     if session.event.sn in RECORD:
         return BLOCK
 
-    msg = session.elements.extract_plain_text()
     try:
-        answer = await LLMSessionManager.chat(user_input=msg, ctx=ctx, session=session, steps=_conf.toolcall_max_steps)
+        answer = await LLMSessionManager.chat(
+            session.elements,
+            session=session,
+            ctx=ctx,
+            steps=_conf.toolcall_max_steps
+        )
         if answer != "[END_OF_RESPONSE]":
             await session.send(answer)
     except ModelNotFoundError as e:
