@@ -9,12 +9,20 @@ authors = [
 dependencies = [
     "arclet.entari[yaml,cron,reload,dotenv]>=0.17.1",
     "docstring-parser>=0.17.0",
-    "litellm>=1.80.9",
+    "litellm>=1.84.0",
     "entari-plugin-database>=0.2.4",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
 license = {"text" = "MIT"}
+
+[project.optional-dependencies]
+browser = [
+    "entari-plugin-browser>=0.5.4",
+]
+google = [
+    "litellm[google]>=1.81.13",
+]
 
 [dependency-groups]
 dev = [
@@ -25,9 +33,6 @@ dev = [
     "agno>=2.5.8",
     "ddgs>=9.11.2",
     "satori-python-adapter-milky>=0.3.1",
-]
-google = [
-    "litellm[google]>=1.81.13",
 ]
 
 [tool.ruff]

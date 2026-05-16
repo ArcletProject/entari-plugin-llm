@@ -29,6 +29,12 @@ plugins:
   ::inspect: {}
   ::auto_reload:
     watch_config: true
+
+  entari_plugin_browser:
+    browser_type: chromium
+    channel: chromium
+    headless: true
+
   entari_plugin_llm:
     api_key: ${{ env.get('OPENAI_API_KEY', None) }}
     base_url: https://api.openai.com/v1
