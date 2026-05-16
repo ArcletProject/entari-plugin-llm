@@ -26,7 +26,6 @@ class LLMToolEvent:
 tools_pub = define(LLMToolEvent, name="tools_pub")
 tools_pub.bind(*get_providers(MessageCreatedEvent))
 
-
 tools = []
 available_functions: dict[str, Subscriber[JSON_TYPE]] = {}
 
@@ -86,3 +85,4 @@ def _register_tool(_, sub: Subscriber):
     )  # type: ignore
     logger.debug(f"Registered tool: {sub.__name__}")
     return True
+

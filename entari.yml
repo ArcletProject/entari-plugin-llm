@@ -54,7 +54,7 @@ plugins:
     .handlers.chat:
       foo: bar
 
-  example_tools: {}
+  # example_tools: {}
   zssm: {}
 
   entari_plugin_server:

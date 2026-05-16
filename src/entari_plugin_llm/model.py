@@ -31,7 +31,7 @@ class SessionContext(Base):
     session_id: Mapped[str] = mapped_column(String(64), ForeignKey("entari_plugin_llm_session.session_id"), index=True)
 
     role: Mapped[ROLE] = mapped_column(String(16))
-    content: Mapped[str] = mapped_column(Text)
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
     reasoning_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     name: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
