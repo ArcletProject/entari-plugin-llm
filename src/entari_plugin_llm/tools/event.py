@@ -5,7 +5,7 @@ from arclet.entari import MessageCreatedEvent
 from arclet.entari.config.dc_schema import _MISSING, SchemaGenerator
 from arclet.letoderea import Subscriber, define
 from arclet.letoderea.provider import get_providers
-from arclet.letoderea.typing import Result
+from arclet.letoderea.utils import Result
 from docstring_parser import parse
 from tarina import Empty
 from tarina.generic import get_origin, origin_is_union
@@ -24,7 +24,7 @@ class LLMToolEvent:
 
 
 tools_pub = define(LLMToolEvent, name="tools_pub")
-tools_pub.bind(*get_providers(MessageCreatedEvent))
+tools_pub.providers.extend(get_providers(MessageCreatedEvent))
 
 tools = []
 available_functions: dict[str, Subscriber[JSON_TYPE]] = {}

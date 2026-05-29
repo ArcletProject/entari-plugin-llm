@@ -7,10 +7,10 @@ authors = [
     {"name" = "KomoriDev", "email" = "mute231010@gmail.com"}
 ]
 dependencies = [
-    "arclet.entari[yaml,cron,reload,dotenv]>=0.17.1",
+    "arclet.entari[yaml,cron,reload,dotenv]>=0.18.0rc2",
     "docstring-parser>=0.17.0",
     "litellm>=1.84.0",
-    "entari-plugin-database>=0.2.4",
+    "entari-plugin-database>=0.3.1",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
