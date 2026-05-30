@@ -30,7 +30,6 @@ async def run_conversation(session: Session, ctx: Contexts):
             session.elements,
             session=session,
             ctx=ctx,
-            steps=_conf.toolcall_max_steps
         )
         if answer != "[END_OF_RESPONSE]":
             await session.send(answer)

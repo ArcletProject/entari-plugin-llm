@@ -22,6 +22,9 @@ basic:
 plugins:
   $prelude:
     - ::auto_reload
+  $prefix:
+    - key: ""
+      plugins: ["zssm"]
   .record_message:
     record_send: true
   ::echo: {}

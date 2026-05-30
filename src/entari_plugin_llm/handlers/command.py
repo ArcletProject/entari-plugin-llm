@@ -4,7 +4,7 @@ from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import BLOCK, Contexts
 
 from .._jsondata import set_default_model
-from ..config import _conf, get_model_config, get_model_list
+from ..config import get_model_config, get_model_list
 from ..exception import ModelNotFoundError
 from .manager import LLMSessionManager
 from .utils import render_model_list, render_session_list, select_session
@@ -71,7 +71,6 @@ async def _(
             ctx=ctx,
             model=model.result if model.available else None,
             new=new_opt.result,
-            steps=_conf.toolcall_max_steps,
         )
         if answer != "[END_OF_RESPONSE]":
             await session.send(answer)
