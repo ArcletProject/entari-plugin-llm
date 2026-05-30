@@ -97,7 +97,7 @@ class LLMSessionManager:
             await db_session.commit()
 
     @classmethod
-    async def _add_token_usage(cls, session_id: str, tokens: int) -> None:
+    async def _persist_token_usage(cls, session_id: str, tokens: int) -> None:
         if tokens <= 0:
             return
 
@@ -107,6 +107,18 @@ class LLMSessionManager:
                 return
             user_session.total_tokens += tokens
             await db_session.commit()
+
+    @staticmethod
+    def _get_response_tokens(response: litellm.ModelResponse) -> int:
+        usage = getattr(response, "usage", None)
+        if usage is None and isinstance(response, dict):
+            usage = response.get("usage")
+
+        if usage is None:
+            return 0
+        if isinstance(usage, dict):
+            return int(usage.get("total_tokens") or 0)
+        return int(getattr(usage, "total_tokens", 0) or 0)
 
     @classmethod
     async def _refresh_topic(
@@ -254,6 +266,7 @@ class LLMSessionManager:
             user=session.user.name,
             on_message=on_message_callback,
         )
+        await cls._persist_token_usage(llm_session.session_id, cls._get_response_tokens(response))
 
         response_message = response.choices[0].message
         final_answer = response_message.content or ""
