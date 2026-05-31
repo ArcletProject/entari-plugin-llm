@@ -5,7 +5,7 @@ from urllib.parse import quote
 import httpx
 from arclet.entari import Session, command, plugin
 from arclet.letoderea import BLOCK
-from arclet.letoderea.core import add_task
+from arclet.letoderea.utils import add_task
 
 from entari_plugin_llm import LLMToolEvent
 

@@ -1,2 +1,1 @@
-# entari-plugin-llm
-An Entari Plugin for LLM Chat with Function Call
+./src/entari_plugin_llm/README.md

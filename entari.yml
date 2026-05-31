@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=entari.schema.json
 # $schema: ./entari.schema.json
 
 basic:
@@ -44,10 +45,10 @@ plugins:
     models:
       - name: "deepseek/deepseek-v3"
         alias: "deepseek-v3"
-        api_key: ${{env.DEEPSEEK_API_KEY }}
+        api_key: ${{ env.DEEPSEEK_API_KEY }}
         base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
 #      - name: "deepseek/deepseek-chat"
-#        api_key: ${{env.DEEPSEEK_API_KEY }}
+#        api_key: ${{ env.DEEPSEEK_API_KEY }}
 #        base_url: https://api.deepseek.com
 #      - name: "gemini/gemini-pro"
 #        api_key: ${{ env.get('GEMINI_API_KEY', None) }}
@@ -60,8 +61,6 @@ plugins:
       2. 如果信息不足以回答问题，请礼貌地告知用户需要更多信息。
       3. 如果你的回答超过了30字，请将你的回答进行分段，然后调用 `split_answer_send` 工具将多段回答进行发送。
       4. 然后，语气表现的可爱一些。
-    .handlers.chat:
-      foo: bar
 
   # example_tools: {}
   zssm: {}

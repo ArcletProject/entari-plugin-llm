@@ -22,7 +22,7 @@ class ScopedModel(BasicConfModel):
     """传递给 LLM API 调用的额外参数"""
 
 
-class Config(BasicConfModel):
+class Config(BasicConfModel, extra="allow"):
     api_key: str | None = None
     """用于使用 OpenAI API 进行身份验证的全局 API 密钥。用作没有特定键的模型的后备"""
     base_url: str = "https://api.openai.com/v1"
@@ -58,9 +58,9 @@ class Config(BasicConfModel):
                 tool_config["$optional"] = True
 
             if key.startswith("::"):
-                new_key =  new_key.replace("::", "entari_plugin_llm.tools.builtins.")
+                new_key = new_key.replace("::", "entari_plugin_llm.tools.builtins.")
 
-            if tool_config.get("$disable") is True:
+            if tool_config.get("$disable"):
                 continue
 
             loaded_tools[new_key] = tool_config
@@ -69,6 +69,7 @@ class Config(BasicConfModel):
 
     def __post_init__(self):
         self._reload_tools()
+
 
 _conf = plugin_config(Config)
 
