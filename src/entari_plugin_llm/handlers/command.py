@@ -6,8 +6,8 @@ from arclet.letoderea import BLOCK, Contexts
 from .._jsondata import set_default_model
 from ..config import get_model_config, get_model_list
 from ..exception import ModelNotFoundError
-from .manager import LLMSessionManager
-from .utils import render_model_list, render_session_list, select_session
+from ..manager import LLMSessionManager
+from ..utils import render_model_list, render_session_list, select_session
 
 
 metadata(
@@ -54,7 +54,7 @@ llm_disp = command.mount(llm_alc)
 
 
 @llm_disp.handle(priority=25)
-async def _(
+async def main_chat(
     ctx: Contexts,
     session: Session,
     content: command.Match[MessageChain],

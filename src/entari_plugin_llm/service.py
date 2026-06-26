@@ -42,18 +42,32 @@ class LLMService(Service):
     def _build_payload(
         self,
         messages: list[Message],
+        variables: dict[str, Any] | None,
         stream: bool,
         system: str | None = None,
         model: str | None = None,
+        ignore_user_prompt: bool = False,
         **kwargs,
     ) -> dict:
         conf = get_model_config(model)
         payload_messages = list(messages)
 
-        if system or conf.prompt:
-            payload_messages.insert(
-                0, {"role": "system", "content": system or conf.prompt}
-            )
+        if system:
+            user_prompt = system
+        elif not ignore_user_prompt and conf.prompt:
+            user_prompt = conf.prompt
+        else:
+            user_prompt = None
+        if user_prompt:
+            payload_messages.insert(0, {"role": "system", "content": user_prompt})
+            if variables:
+                VARIABLES = (
+                        "下列是用以辅助你思考回答的变量：\n" +
+                        f"\n".join(f"- **{key}**: {value!r}" for key, value in variables.items())
+                )
+                payload_messages.insert(
+                    1, {"role": "system", "content": VARIABLES}
+                )
 
         return {
             "model": conf.name,
@@ -107,12 +121,14 @@ class LLMService(Service):
     async def generate(
         self,
         message: str | list[Message],
+        variables: dict[str, Any] | None = None,
         *,
         stream: Literal[False] = False,
         system: str | None = None,
         model: str | None = None,
         output: None = None,
         on_message: Callable[[Message], Awaitable[None]] | None = None,
+        ignore_user_prompt: bool = False,
         **kwargs,
     ) -> litellm.ModelResponse: ...
 
@@ -120,12 +136,14 @@ class LLMService(Service):
     async def generate(
         self,
         message: str | list[Message],
+        variables: dict[str, Any] | None = None,
         *,
         stream: Literal[True],
         system: str | None = None,
         model: str | None = None,
         output: type[TOutput] | None = None,
         on_message: Callable[[Message], Awaitable[None]] | None = None,
+        ignore_user_prompt: bool = False,
         **kwargs,
     ) -> litellm.CustomStreamWrapper: ...
 
@@ -133,12 +151,14 @@ class LLMService(Service):
     async def generate(
         self,
         message: str | list[Message],
+        variables: dict[str, Any] | None = None,
         *,
         stream: Literal[False] = False,
         system: str | None = None,
         model: str | None = None,
         output: Literal["json_object"] | dict[str, Any],
         on_message: Callable[[Message], Awaitable[None]] | None = None,
+        ignore_user_prompt: bool = False,
         **kwargs,
     ) -> StructuredModelResponse[Any]: ...
 
@@ -146,12 +166,14 @@ class LLMService(Service):
     async def generate(
         self,
         message: str | list[Message],
+        variables: dict[str, Any] | None = None,
         *,
         stream: Literal[False] = False,
         system: str | None = None,
         model: str | None = None,
         output: type[TOutput],
         on_message: Callable[[Message], Awaitable[None]] | None = None,
+        ignore_user_prompt: bool = False,
         **kwargs,
     ) -> StructuredModelResponse[TOutput]: ...
 
@@ -159,24 +181,28 @@ class LLMService(Service):
     async def generate(
         self,
         message: str | list[Message],
+        variables: dict[str, Any] | None = None,
         *,
         stream: bool,
         system: str | None = None,
         model: str | None = None,
         output: OutputType | None = None,
         on_message: Callable[[Message], Awaitable[None]] | None = None,
+        ignore_user_prompt: bool = False,
         **kwargs,
     ) -> litellm.ModelResponse | litellm.CustomStreamWrapper: ...
 
     async def generate(
         self,
         message: str | list[Message],
+        variables: dict[str, Any] | None = None,
         *,
         stream: bool = False,
         system: str | None = None,
         model: str | None = None,
         output: OutputType | None = None,
         on_message: Callable[[Message], Awaitable[None]] | None = None,
+        ignore_user_prompt: bool = False,
         **kwargs,
     ) -> litellm.ModelResponse | litellm.CustomStreamWrapper:
         if isinstance(message, str):
@@ -199,11 +225,13 @@ class LLMService(Service):
         for _ in range(steps):
             payload = self._build_payload(
                 messages=messages,
+                variables=variables,
                 stream=stream,
                 system=system,
                 model=model,
                 tools=tools.copy(),
                 tool_choice="auto",
+                ignore_user_prompt=ignore_user_prompt,
                 **kwargs,
             )
             response = await litellm.acompletion(**payload)
@@ -288,7 +316,7 @@ class LLMService(Service):
         if not litellm.supports_vision(conf.name):
             raise RuntimeError(f"Model {conf.name} does not support vision input")
 
-        return await self.generate(message, system=system, model=conf.name)
+        return await self.generate(message, system=system, model=conf.name, ignore_user_prompt=True)
 
     async def launch(self, manager: Launart):
         async with self.stage("preparing"):

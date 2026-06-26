@@ -5,17 +5,16 @@ from urllib.parse import quote
 import httpx
 from arclet.entari import Session, command, plugin
 from arclet.letoderea import BLOCK
-from arclet.letoderea.utils import add_task
 
-from entari_plugin_llm import LLMToolEvent
+from entari_plugin_llm import LLMToolEvent, LLMCollectVariableEvent
 
 tools = plugin.dispatch(LLMToolEvent)
 client = httpx.AsyncClient(timeout=30)
 
 
 @plugin.collect_disposes
-def dispose_client():
-    add_task(client.aclose())
+async def dispose_client():
+    await client.aclose()
 
 
 @tools
@@ -95,7 +94,7 @@ async def _get_weather(city: str, timeout: int = 30) -> dict:
         wind_speed = condition["windspeedKmph"] + " km/h"
         uv_index = condition["uvIndex"]
         visibility = condition["visibility"] + " km"
-        current_time = condition["localObsDateTime"]
+        current_time = condition["observation_time"]
         precip = condition["precipMM"] + " mm"
         return {
             "format": "* {type}: {content}",
@@ -141,3 +140,10 @@ async def get_weather(session: Session, city: str = ""):
         能见度：{weather_info["visibility"]}
         降雨量: {weather_info["precipitation"]}
     """)
+
+
+@plugin.dispatch(LLMCollectVariableEvent)
+async def trust_collect(session: Session):
+    if session.event.user and session.event.user.id == "3165388245":
+        return {"trust": 200}
+    return {"trust": 5}

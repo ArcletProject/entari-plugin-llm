@@ -4,14 +4,15 @@ from uuid import uuid4
 
 import litellm
 from arclet.entari import Image, MessageChain, Session, Text
-from arclet.letoderea.context import Contexts
+from arclet.letoderea import Contexts, waterfall
 from entari_plugin_database import get_session as get_db_session
 from sqlalchemy import desc, func, select
 
-from .._types import Message
-from ..config import get_model_config
-from ..model import LLMSession, SessionContext
-from ..service import llm
+from ._types import Message, UserMessage
+from .config import get_model_config
+from .event import LLMCollectVariableEvent
+from .model import LLMSession, SessionContext
+from .service import llm
 
 
 class LLMSessionManager:
@@ -23,7 +24,7 @@ class LLMSessionManager:
             f"用户输入：{user_input}"
         )
         try:
-            result = await llm.generate(prompt, stream=False, model=model)
+            result = await llm.generate(prompt, stream=False, model=model, ignore_user_prompt=True)
             topic = (result.choices[0]["message"]["content"] or "").strip()
             return topic or "新对话"
         except Exception:
@@ -142,7 +143,7 @@ class LLMSessionManager:
         *,
         session: Session,
         model: str | None = None,
-    ) -> Message:
+    ) -> UserMessage:
         content = []
         model = model or get_model_config().name
 
@@ -154,10 +155,10 @@ class LLMSessionManager:
             for img in img_chain:
                 content.append({"type": "image_url", "image_url": {"url": img.src}})
 
-        user_message: Message = {
+        user_message: UserMessage = {
             "role": "user",
             "content": content,
-            "name": f"{session.user.name}@{session.user.id}",
+            "name": f"{session.user.name}({session.user.id})",
         }
 
         return user_message
@@ -244,7 +245,7 @@ class LLMSessionManager:
         llm_session = await cls._get_active_session(f"{session.account.platform}@{session.user.id}")
         if new or llm_session is None:
             llm_session = await cls._create_session(
-                user_id=f"{session.account.platform}@{session.user.id}",
+                user_id=f"{session.user.id}@{session.account.platform}",
                 user_input=user_prompt.extract_plain_text(),
                 model=model,
             )
@@ -259,8 +260,14 @@ class LLMSessionManager:
         async def on_message_callback(message: Message) -> None:
             await cls._persist_message(llm_session.session_id, message)
 
+        collect_event = LLMCollectVariableEvent(session, llm_session, user_prompt)
+        variables = {}
+        async for res in waterfall(collect_event, inherit_ctx=ctx):
+            variables.update(res.value)
+
         response = await llm.generate(
             messages,
+            variables,
             stream=False,
             model=model,
             user=session.user.name,

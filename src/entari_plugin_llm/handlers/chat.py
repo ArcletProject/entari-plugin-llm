@@ -9,7 +9,7 @@ from arclet.letoderea.context import Contexts
 
 from ..config import Config, _conf
 from ..exception import ModelNotFoundError
-from .manager import LLMSessionManager
+from ..manager import LLMSessionManager
 
 RECORD = deque(maxlen=16)
 

@@ -4,6 +4,7 @@ from arclet.entari.plugin import PluginRole
 from .config import Config, _conf
 from .log import _suppress_litellm_logging
 from .tools import LLMToolEvent as LLMToolEvent
+from .event import LLMCollectVariableEvent as LLMCollectVariableEvent
 
 metadata(
     name="LLM 工具箱",

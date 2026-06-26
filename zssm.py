@@ -89,8 +89,8 @@ class Output:
     block: bool
 
 
-@command.command("zssm [...content]")
-async def _(content: command.Match[MessageChain], ctx: Contexts, session: Session):
+@command.command("zssm [...content]", "知识速释")
+async def zssm(content: command.Match[MessageChain], ctx: Contexts, session: Session):
     user_prompt = ""
     img_chain: MessageChain[Image] = MessageChain([])
 
