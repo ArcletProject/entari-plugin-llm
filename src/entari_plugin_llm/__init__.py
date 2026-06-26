@@ -1,4 +1,5 @@
 from arclet.entari import declare_static, metadata, plugin
+from arclet.entari.plugin import PluginRole
 
 from .config import Config, _conf
 from .log import _suppress_litellm_logging
@@ -6,6 +7,7 @@ from .tools import LLMToolEvent as LLMToolEvent
 
 metadata(
     name="LLM 工具箱",
+    role=PluginRole.COMPLEX,
     author=[
         {"name": "RF-Tar-Railt", "email": "rf_tar_railt@qq.com"},
         {"name": "KomoriDev", "email": "mute231010@gmail.com"},

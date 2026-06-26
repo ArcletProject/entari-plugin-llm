@@ -7,7 +7,7 @@ from ..log import logger
 
 
 @on(Ready)
-async def _():
+async def check_config():
     if not _conf.models:
         set_default_model(None)
         logger.warning("未配置任何模型，已清空本地默认模型配置")

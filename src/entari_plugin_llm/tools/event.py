@@ -16,7 +16,6 @@ from ..log import logger
 
 
 class LLMToolEvent:
-    __publisher__ = "tools_pub"
 
     def check_result(self, value: Any) -> Result[JSON_TYPE] | None:
         if isinstance(value, (str, int, float, bool, type(None), list, dict)):

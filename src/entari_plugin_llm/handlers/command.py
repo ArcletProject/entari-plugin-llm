@@ -1,5 +1,5 @@
 from arclet.alconna import Alconna, Args, MultiVar, Option, Subcommand, store_true
-from arclet.entari import MessageChain, Session, command
+from arclet.entari import MessageChain, Session, command, metadata
 from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import BLOCK, Contexts
 
@@ -9,10 +9,22 @@ from ..exception import ModelNotFoundError
 from .manager import LLMSessionManager
 from .utils import render_model_list, render_session_list, select_session
 
+
+metadata(
+    name="LLM 指令",
+    author=[
+        {"name": "RF-Tar-Railt", "email": "rf_tar_railt@qq.com"},
+        {"name": "KomoriDev", "email": "mute231010@gmail.com"},
+    ],
+    version="0.1.0",
+    description="LLM 工具箱插件的指令模块",
+)
+
+
 llm_alc = Alconna(
     "llm",
     Args["content?#内容", MultiVar(str)],
-    Option("-m|--model", Args["model?#模型名称", str], help_text="指定模型"),
+    Option("-m|--model", Args["model?#模型名称", str], dest="select_model", help_text="指定模型"),
     Option(
         "-n|--new",
         dest="new_opt",
@@ -32,7 +44,7 @@ llm_alc = Alconna(
         "model",
         Args["model?#模型名称", str],
         Option("-l|--list", help_text="查看模型列表"),
-        help_text="查看当前模型信息",
+        help_text="查看当前模型信息，或切换默认模型",
     ),
 )
 
@@ -47,7 +59,7 @@ async def _(
     session: Session,
     content: command.Match[MessageChain],
     new_opt: command.Query[bool] = command.Query("new_opt.value"),
-    model: command.Query[str] = command.Query("model.model"),
+    model: command.Query[str] = command.Query("select_model.model"),
 ):
     user_prompt = MessageChain([])
 
@@ -164,6 +176,12 @@ async def _(session: Session):
     return BLOCK
 
 
+@llm_disp.assign("model.list")
+async def _(session: Session):
+    await session.send(render_model_list())
+    return BLOCK
+
+
 @llm_disp.assign("model", priority=20)
 async def _(session: Session, model: command.Match[str]):
     if model.available:
@@ -181,8 +199,3 @@ async def _(session: Session, model: command.Match[str]):
     await session.send(render_model_list())
     return BLOCK
 
-
-@llm_disp.assign("model.list")
-async def _(session: Session):
-    await session.send(render_model_list())
-    return BLOCK

@@ -12,7 +12,7 @@ requires_python = ">=3.11"
 
 [[package]]
 name = "agno"
-version = "2.6.9"
+version = "2.6.19"
 requires_python = "<4,>=3.7"
 summary = "The programming language for agentic software."
 groups = ["dev"]
@@ -33,8 +33,8 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "agno-2.6.9-py3-none-any.whl", hash = "sha256:940fe1c17f6403c0053b2b37ca895a6acfd01d726ea6fb9f48c040497d0fc2b3"},
-    {file = "agno-2.6.9.tar.gz", hash = "sha256:f9ee6298ee43cfeafc4552613aa5b590bf5635a65d5b222a5da78457f6981f76"},
+    {file = "agno-2.6.19-py3-none-any.whl", hash = "sha256:8a8a5a061e692cf9aa275a77f4bf09580b13505a4e04fe7371d238611016ef82"},
+    {file = "agno-2.6.19.tar.gz", hash = "sha256:4d4b26820cb23d719bfc86aafa14e6e5cd0c7088b8401d1b1ca6d39ab1f8bc5e"},
 ]
 
 [[package]]
@@ -280,7 +280,7 @@ files = [
 
 [[package]]
 name = "arclet-entari"
-version = "0.18.0rc2"
+version = "0.18.0rc4"
 requires_python = ">=3.10"
 summary = "Simple IM Framework based on satori-python"
 groups = ["default", "browser", "dev"]
@@ -288,40 +288,40 @@ marker = "python_version >= \"3.11\""
 dependencies = [
     "arclet-alconna-tools>=0.7.3",
     "arclet-alconna<2.0.0,>=1.8.44",
-    "arclet-letoderea<0.22.0,>=0.21.1",
+    "arclet-letoderea<0.22.0,>=0.21.3",
     "nonestorage>=0.1.0",
     "satori-python-client<1.4.0,>=1.3.2",
-    "satori-python-core<1.4.0,>=1.3.2",
+    "satori-python-core<1.4.0,>=1.3.5",
     "simpleeval>=1.0.3",
 ]
 files = [
-    {file = "arclet_entari-0.18.0rc2-py3-none-any.whl", hash = "sha256:e2349f35510edb5b6e67c7de8e73d3bdf6c20ff343ae3525a4f2c4eeadffd1c1"},
-    {file = "arclet_entari-0.18.0rc2.tar.gz", hash = "sha256:57aba95d03fe0ffe072de887d288f81f73cc1da04326ad8c51e587e97be2fb1c"},
+    {file = "arclet_entari-0.18.0rc4-py3-none-any.whl", hash = "sha256:2f8160c0cf9d49fa4773c8340aa54d4712ce5b205cf210673c9c4d50c68153d3"},
+    {file = "arclet_entari-0.18.0rc4.tar.gz", hash = "sha256:a9406c82da2aa4f0e75bce729ceaeca722218a3458ac8e1e976b29603be60a69"},
 ]
 
 [[package]]
 name = "arclet-entari"
-version = "0.18.0rc2"
+version = "0.18.0rc4"
 extras = ["cron", "dotenv", "reload", "yaml"]
 requires_python = ">=3.10"
 summary = "Simple IM Framework based on satori-python"
 groups = ["default"]
 marker = "python_version >= \"3.11\""
 dependencies = [
-    "arclet-entari==0.18.0rc2",
+    "arclet-entari==0.18.0rc4",
     "croniter>=5.0.1",
     "python-dotenv>=1.0.1",
     "ruamel-yaml>=0.18.10",
     "watchfiles>=1.0.3",
 ]
 files = [
-    {file = "arclet_entari-0.18.0rc2-py3-none-any.whl", hash = "sha256:e2349f35510edb5b6e67c7de8e73d3bdf6c20ff343ae3525a4f2c4eeadffd1c1"},
-    {file = "arclet_entari-0.18.0rc2.tar.gz", hash = "sha256:57aba95d03fe0ffe072de887d288f81f73cc1da04326ad8c51e587e97be2fb1c"},
+    {file = "arclet_entari-0.18.0rc4-py3-none-any.whl", hash = "sha256:2f8160c0cf9d49fa4773c8340aa54d4712ce5b205cf210673c9c4d50c68153d3"},
+    {file = "arclet_entari-0.18.0rc4.tar.gz", hash = "sha256:a9406c82da2aa4f0e75bce729ceaeca722218a3458ac8e1e976b29603be60a69"},
 ]
 
 [[package]]
 name = "arclet-letoderea"
-version = "0.21.1"
+version = "0.21.3"
 requires_python = "<4.0,>=3.10"
 summary = "A high-performance, simple-structured event system, relies on asyncio"
 groups = ["default", "browser", "dev"]
@@ -331,8 +331,8 @@ dependencies = [
     "typing-extensions>=4.12.0",
 ]
 files = [
-    {file = "arclet_letoderea-0.21.1-py3-none-any.whl", hash = "sha256:18df0fdd4adfc4f345c0f57137226472896f950ccd856451972684ee56952cd8"},
-    {file = "arclet_letoderea-0.21.1.tar.gz", hash = "sha256:5d5addc5901e4e1873dbe405fd2bfb2e83a7efa98714528cfd6aa5f1ea6a3159"},
+    {file = "arclet_letoderea-0.21.3-py3-none-any.whl", hash = "sha256:ea1e235a037a193c734fbbe754969db9242d551290b11a0c0babae4e17d56d9d"},
+    {file = "arclet_letoderea-0.21.3.tar.gz", hash = "sha256:4a2588d521afcd18d356804dc4289209be07b885e1d7851c8e37c8c03b954af4"},
 ]
 
 [[package]]
@@ -706,25 +706,25 @@ files = [
 
 [[package]]
 name = "entari-plugin-browser"
-version = "0.6.0"
+version = "0.6.1"
 requires_python = ">=3.10"
 summary = "Browser API service for Entari using Playwright"
 groups = ["browser"]
 marker = "python_version >= \"3.11\""
 dependencies = [
-    "arclet-entari<0.19.0,>=0.18.0rc1",
+    "arclet-entari<0.19.0,>=0.18.0rc4",
     "graiax-playwright>=0.5.0",
     "graiax-text2img-playwright>=0.5.0",
     "playwright>=1.59.0",
 ]
 files = [
-    {file = "entari_plugin_browser-0.6.0-py3-none-any.whl", hash = "sha256:13b50a74604ede49704191ca5b042dc4a96657fe5eb617619679bbbe6c243d6d"},
-    {file = "entari_plugin_browser-0.6.0.tar.gz", hash = "sha256:6c8e4b7b706611e135805fdb9e46621bec99f62893b1bdc87e3ed767d084c83f"},
+    {file = "entari_plugin_browser-0.6.1-py3-none-any.whl", hash = "sha256:174fc481744000bf0b9f474867b27fc152bed47a612c3deb75fd2afd36ce9fec"},
+    {file = "entari_plugin_browser-0.6.1.tar.gz", hash = "sha256:c8b7ce82b496975d255ffac3716d2a6731cb3575b564b93b08b0ff20a4bfd344"},
 ]
 
 [[package]]
 name = "entari-plugin-database"
-version = "0.3.1"
+version = "0.3.2"
 requires_python = ">=3.10"
 summary = "Entari plugin for SQLAlchemy ORM"
 groups = ["default"]
@@ -732,31 +732,31 @@ marker = "python_version >= \"3.11\""
 dependencies = [
     "aiosqlite>=0.21.0",
     "alembic>=1.16.5",
-    "arclet-entari<0.19.0,>=0.18.0rc1",
+    "arclet-entari<0.19.0,>=0.18.0rc4",
     "arclet-letoderea>=0.19.5",
     "graia-amnesia>=0.11.4",
     "sqlalchemy>=2.0.42",
     "tarina<0.8.0,>=0.7.1",
 ]
 files = [
-    {file = "entari_plugin_database-0.3.1-py3-none-any.whl", hash = "sha256:51279f7a84af14c1cc8b975379ddbcb76416bfdde68165cf68f3a2719c4c891b"},
-    {file = "entari_plugin_database-0.3.1.tar.gz", hash = "sha256:a9ef3d7150ca3cf414f024a9f19cfe184b976555eda1bcf14f4bdab83bc09e87"},
+    {file = "entari_plugin_database-0.3.2-py3-none-any.whl", hash = "sha256:6bd0593054e82257376f0f14ab713ecb6ed9d410b73b107100b6f6765e19651e"},
+    {file = "entari_plugin_database-0.3.2.tar.gz", hash = "sha256:49066ec1049e7e6cf7c3ebfe5971817e5c78d7fe7cbc571170b8c3812f9ed322"},
 ]
 
 [[package]]
 name = "entari-plugin-server"
-version = "0.7.0"
+version = "0.7.1"
 requires_python = ">=3.10"
 summary = "Entari plugin for running Satori Server"
 groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
-    "arclet-entari<0.19.0,>=0.18.0rc1",
+    "arclet-entari<0.19.0,>=0.18.0rc4",
     "satori-python-server<1.4.0,>=1.3.0",
 ]
 files = [
-    {file = "entari_plugin_server-0.7.0-py3-none-any.whl", hash = "sha256:9a69388f8b71552b62a8bd5d98c39a94551222a50bc53caee0da1cea3d7bfbb7"},
-    {file = "entari_plugin_server-0.7.0.tar.gz", hash = "sha256:44a349318bbea178e207097657e24f42fb18abdf97581586325b15c015e7e1ec"},
+    {file = "entari_plugin_server-0.7.1-py3-none-any.whl", hash = "sha256:e3f3176eb6da4f4773475122476508293bc211ccfc847f377e5545d7b86afc51"},
+    {file = "entari_plugin_server-0.7.1.tar.gz", hash = "sha256:a5d2c902651c6cdbbb933bd2158f420a86461f9daa15fb349ab681c7c61511dd"},
 ]
 
 [[package]]
@@ -2799,30 +2799,30 @@ files = [
 
 [[package]]
 name = "ruff"
-version = "0.15.15"
+version = "0.15.19"
 requires_python = ">=3.7"
 summary = "An extremely fast Python linter and code formatter, written in Rust."
 groups = ["dev"]
 marker = "python_version >= \"3.11\""
 files = [
-    {file = "ruff-0.15.15-py3-none-linux_armv6l.whl", hash = "sha256:cf93e5388f412e1b108b1f8b34a6e036b70fe8aff89393befad96fe48670311b"},
-    {file = "ruff-0.15.15-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:ac5a646d1f6a7dadd5d50842dae2c1f9862ac887ef5d1b1375e02def791fde6e"},
-    {file = "ruff-0.15.15-py3-none-macosx_11_0_arm64.whl", hash = "sha256:77d955a431430c66f72dd94e379ad38a16daea3d25094872ac4edf9e797be530"},
-    {file = "ruff-0.15.15-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7614ee79c69788cf6cedd568069ade9cecc22a1ad20494efe8d0c9ebb4b622d4"},
-    {file = "ruff-0.15.15-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:3cdb1679e06a1f6b47bc384714ae96f6e2fb65ca441eb78c43d2ca554176ce1f"},
-    {file = "ruff-0.15.15-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2728b93d7b23a603ea2c0ac6eb73d760bd38ec9de35f35fb41e18f7a3fee7622"},
-    {file = "ruff-0.15.15-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:be582fcc0db438902c7792b08d6ddf6c9b9e21addaa10092c2c741cfb09e5a45"},
-    {file = "ruff-0.15.15-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:7aa77465b8ecaf1a27bea098d696f7fed5e1eccbd10b321b682d6de586ae5627"},
-    {file = "ruff-0.15.15-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:48decfa11d740de4889de623be1463308346312f2409a56e24aa280c86162dc4"},
-    {file = "ruff-0.15.15-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:a5015088452ca0081387063649ec67f06d3d1d6b8b936a1f836b5e9657ecd48c"},
-    {file = "ruff-0.15.15-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:f5294aab6356c81600fcdea3a62bb1b924dfd5e91767c12318d3f68f86af57cd"},
-    {file = "ruff-0.15.15-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:db5bd4d802415cca656dc1616070b725952d6ae95eb5d4831e49fbd94a38f75f"},
-    {file = "ruff-0.15.15-py3-none-musllinux_1_2_i686.whl", hash = "sha256:587a6278ed42059191c1a466e490bd7930fb50bd2e255398bc29616c895a61cb"},
-    {file = "ruff-0.15.15-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:df0c1c084f5f4be9812f61518a45c440d3c30d69ce4bf6c5270e66d38338f02a"},
-    {file = "ruff-0.15.15-py3-none-win32.whl", hash = "sha256:29428ea79694afbe756d45fd59b36f22b6b020dc0443cf7de0173046236964b9"},
-    {file = "ruff-0.15.15-py3-none-win_amd64.whl", hash = "sha256:8df0323902e15e24bc4bf246da830573d3cf3352bd0b9a164eab335d111ff4a4"},
-    {file = "ruff-0.15.15-py3-none-win_arm64.whl", hash = "sha256:3c8ceca6792f38196b8f589bc92eccd03eef286602da92e5dc05cc42ef6441b7"},
-    {file = "ruff-0.15.15.tar.gz", hash = "sha256:b8dff018130b46d8e5bf0f926ef6b60cf871d6d5ae45fc9334e09632daa741d6"},
+    {file = "ruff-0.15.19-py3-none-linux_armv6l.whl", hash = "sha256:922d1eb283161564759bd49f507e91dc6112c15da8bd5b84ed714e086243cf86"},
+    {file = "ruff-0.15.19-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:4d190d8f62a0b94aba8f721116538a9ee29b1e74d26650846ba9b99f0ae21c40"},
+    {file = "ruff-0.15.19-py3-none-macosx_11_0_arm64.whl", hash = "sha256:5a2c86ba6870dd415a9d9eb8be94d7924ebec6a26ffc7958ec7ca29d4bff967d"},
+    {file = "ruff-0.15.19-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:82b432bc087264aea70fd25ac198918b70bd9e2aa0db4297b0bb91bbfbbc63ce"},
+    {file = "ruff-0.15.19-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:8530a09d03b3a8c994f8b559a7dcdabc690bcd3f78ef276c38c83166798ebf56"},
+    {file = "ruff-0.15.19-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:87bf21fb3875fe69f0eacc825411657e2e85589cce633c35c0adf1113649c62b"},
+    {file = "ruff-0.15.19-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f9b229cb3ef56ecc2c1c8ebeca64b7a7740ccaef40a9eb097e78dde5a8560b83"},
+    {file = "ruff-0.15.19-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c6c754515be7b76afe6e7e62df7776709571bcfc1631183828afcf3bafa869e3"},
+    {file = "ruff-0.15.19-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6a498f82e0f4d8904c4e0aea5139cdfac1f39d19a3c51d491292f63a36e83b2e"},
+    {file = "ruff-0.15.19-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:d48caa34488fb521fd0ef4aea2b0e8fe758298df044138f0d67b687a6a0d07ed"},
+    {file = "ruff-0.15.19-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:4171b6613effa9363cd46dd4f75bd1827b6d1b946b5e278ed0c600d305379445"},
+    {file = "ruff-0.15.19-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:27c15b2a241dd4d995557949a094fe78b8ad99122a38ccae1595849bcc947b3f"},
+    {file = "ruff-0.15.19-py3-none-musllinux_1_2_i686.whl", hash = "sha256:ed03b7862d68f0a8771d50ee129980cbf1b113f96e250b73954bc292f689e0bb"},
+    {file = "ruff-0.15.19-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:08143f0685ae278b30727ea72e90c61e5bd9c31b91aac4f5bb989538f73d24b8"},
+    {file = "ruff-0.15.19-py3-none-win32.whl", hash = "sha256:8f47f0f92952af2557212bb10cf3e695cd4cf28b2c6e42cdb18ec6c9ebfa19da"},
+    {file = "ruff-0.15.19-py3-none-win_amd64.whl", hash = "sha256:efeca47ee3f9d4a7162655a3b8e6ee4a878646044233978d4d2c1ff8cdd914f0"},
+    {file = "ruff-0.15.19-py3-none-win_arm64.whl", hash = "sha256:6c6b607466e47349332eb1d9be52fb1467423fc07c217341af41cd0f3f0573be"},
+    {file = "ruff-0.15.19.tar.gz", hash = "sha256:edc27f7172a93b32b102687009d6a588508815072141543ae603a8b9b0823063"},
 ]
 
 [[package]]

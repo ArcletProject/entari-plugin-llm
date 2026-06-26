@@ -1,6 +1,6 @@
 from collections import deque
 
-from arclet.entari import MessageChain, MessageCreatedEvent, Session, filter_
+from arclet.entari import MessageChain, MessageCreatedEvent, Session, filter_, metadata
 from arclet.entari.config import config_model_validate
 from arclet.entari.event.config import ConfigReload
 from arclet.entari.event.send import SendResponse
@@ -13,6 +13,16 @@ from .manager import LLMSessionManager
 
 RECORD = deque(maxlen=16)
 
+metadata(
+    name="LLM 对话功能",
+    author=[
+        {"name": "RF-Tar-Railt", "email": "rf_tar_railt@qq.com"},
+        {"name": "KomoriDev", "email": "mute231010@gmail.com"},
+    ],
+    version="0.1.0",
+    description="LLM 工具箱插件的对话功能模块",
+)
+
 
 @on(SendResponse)
 async def _record(event: SendResponse):
@@ -20,8 +30,9 @@ async def _record(event: SendResponse):
         RECORD.append(event.session.event.sn)
 
 
-@on(MessageCreatedEvent, priority=1000).if_(filter_.to_me)
+@on(MessageCreatedEvent, priority=1000, label="AI 对话").if_(filter_.to_me)
 async def run_conversation(session: Session, ctx: Contexts):
+    """利用 LLM 进行对话"""
     if session.event.sn in RECORD:
         return BLOCK
 
