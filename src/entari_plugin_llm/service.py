@@ -5,7 +5,7 @@ from typing import Any, Literal, TypeVar, overload
 
 import litellm
 from arclet.entari import add_service
-from arclet.letoderea.context import generate_contexts
+from arclet.letoderea.context import Contexts, generate_contexts
 from arclet.letoderea.exceptions import ExitState, _ExitException
 from launart import Launart, Service
 from launart.status import Phase
@@ -79,6 +79,7 @@ class LLMService(Service):
     async def _handle_tool_call(
         self,
         tool_call: litellm.ChatCompletionMessageToolCall,
+        ctx: Contexts | None = None,
     ) -> tuple[ToolMessage | None, bool]:
         function_name = tool_call.function.name
         if function_name is None:
@@ -86,7 +87,7 @@ class LLMService(Service):
 
         function_to_call = available_functions[function_name]
         function_args = json.loads(tool_call.function.arguments)
-        ctx1 = await generate_contexts(LLMToolEvent())
+        ctx1 = await generate_contexts(LLMToolEvent(), inherit_ctx=ctx)
         logger.debug(f"Calling tool: {function_name} with args: {function_args}")
 
         exit_loop = False
@@ -126,6 +127,7 @@ class LLMService(Service):
         output: None = None,
         on_message: Callable[[Message], Awaitable[None]] | None = None,
         ignore_user_prompt: bool = False,
+        ctx: Contexts | None = None,
         **kwargs,
     ) -> litellm.ModelResponse: ...
 
@@ -141,6 +143,7 @@ class LLMService(Service):
         output: type[TOutput] | None = None,
         on_message: Callable[[Message], Awaitable[None]] | None = None,
         ignore_user_prompt: bool = False,
+        ctx: Contexts | None = None,
         **kwargs,
     ) -> litellm.CustomStreamWrapper: ...
 
@@ -156,6 +159,7 @@ class LLMService(Service):
         output: Literal["json_object"] | dict[str, Any],
         on_message: Callable[[Message], Awaitable[None]] | None = None,
         ignore_user_prompt: bool = False,
+        ctx: Contexts | None = None,
         **kwargs,
     ) -> StructuredModelResponse[Any]: ...
 
@@ -171,6 +175,7 @@ class LLMService(Service):
         output: type[TOutput],
         on_message: Callable[[Message], Awaitable[None]] | None = None,
         ignore_user_prompt: bool = False,
+        ctx: Contexts | None = None,
         **kwargs,
     ) -> StructuredModelResponse[TOutput]: ...
 
@@ -186,6 +191,7 @@ class LLMService(Service):
         output: OutputType | None = None,
         on_message: Callable[[Message], Awaitable[None]] | None = None,
         ignore_user_prompt: bool = False,
+        ctx: Contexts | None = None,
         **kwargs,
     ) -> litellm.ModelResponse | litellm.CustomStreamWrapper: ...
 
@@ -200,6 +206,7 @@ class LLMService(Service):
         output: OutputType | None = None,
         on_message: Callable[[Message], Awaitable[None]] | None = None,
         ignore_user_prompt: bool = False,
+        ctx: Contexts | None = None,
         **kwargs,
     ) -> litellm.ModelResponse | litellm.CustomStreamWrapper:
         if isinstance(message, str):
@@ -254,7 +261,7 @@ class LLMService(Service):
             exit_loop = False
             calls = [tc for tc in tool_calls if isinstance(tc, litellm.ChatCompletionMessageToolCall)]
             for tool_call in calls:
-                tool_message, should_exit = await self._handle_tool_call(tool_call)
+                tool_message, should_exit = await self._handle_tool_call(tool_call, ctx)
                 if tool_message:
                     messages.append(tool_message)
                     if on_message:

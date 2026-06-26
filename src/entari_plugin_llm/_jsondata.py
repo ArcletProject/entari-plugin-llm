@@ -34,7 +34,10 @@ def _read_state(channel: str) -> LLMState:
         return LLMState()
     if not isinstance(data, dict):
         return LLMState()
-    return LLMState.from_dict(data.get(channel, {}))
+    res = data.get(channel)
+    if not isinstance(res, dict):
+        res = data.get("$default", {})
+    return LLMState.from_dict(res)
 
 
 def _write_state(data: LLMState, channel: str) -> None:

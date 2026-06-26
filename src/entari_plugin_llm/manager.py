@@ -260,7 +260,7 @@ class LLMSessionManager:
         llm_session = await cls._get_active_session(f"{session.account.platform}@{session.user.id}")
         if new or llm_session is None:
             llm_session = await cls._create_session(
-                user_id=f"{session.user.id}@{session.account.platform}",
+                user_id=f"{session.account.platform}@{session.user.id}",
                 user_input=user_prompt.extract_plain_text(),
                 model=model or get_model_config().name,
             )
@@ -288,6 +288,7 @@ class LLMSessionManager:
             session_id=llm_session.session_id,
             user=session.user.name,
             on_message=on_message_callback,
+            ctx=ctx,
         )
         await cls._persist_token_usage(llm_session.session_id, cls._get_response_tokens(response))
 
