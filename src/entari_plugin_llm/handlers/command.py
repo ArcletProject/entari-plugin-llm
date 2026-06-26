@@ -9,7 +9,6 @@ from ..exception import ModelNotFoundError
 from ..manager import LLMSessionManager
 from ..utils import render_model_list, render_session_list, select_session
 
-
 metadata(
     name="LLM 指令",
     author=[
@@ -45,7 +44,7 @@ llm_alc = Alconna(
         Args["model?#模型名称", str],
         Option("-l|--list", help_text="查看模型列表"),
         help_text="查看当前模型信息, 或者切换会话使用的模型",
-    )
+    ),
 )
 
 llm_alc.shortcut("ai", {"command": "llm", "fuzzy": True, "prefix": True})
@@ -59,8 +58,7 @@ async def _(session: Session, model: command.Query[str] = command.Query("select_
     if model.available:
         set_default_model(conf.name, session.channel.id)
     new_session = await LLMSessionManager.create_new_session(
-        f"{session.account.platform}:{session.user.id}",
-        model=conf.name
+        f"{session.account.platform}:{session.user.id}", model=conf.name
     )
     await session.send(f"以创建并切换到新会话\n会话ID: {new_session.session_id}")
     return BLOCK

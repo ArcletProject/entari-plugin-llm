@@ -1,10 +1,12 @@
 from arclet.entari import plugin
 from launart import Launart
+
 from entari_plugin_llm.log import logger
 from entari_plugin_llm.tools import LLMToolEvent
 
 try:
     from entari_plugin_browser import PlaywrightService
+
     browser_enabled = True
 except ImportError:
     browser_enabled = False
@@ -42,6 +44,7 @@ async def process_web_page(url: str) -> str | None:
             content_text = await page_content.inner_text()
 
     return content_text
+
 
 if browser_enabled:
     tools.register(process_web_page)

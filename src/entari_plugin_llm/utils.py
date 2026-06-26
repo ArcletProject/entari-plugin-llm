@@ -4,8 +4,8 @@ from arclet.entari import Session
 
 from ._jsondata import get_default_model
 from .config import _conf
-from .model import LLMSession
 from .manager import LLMSessionManager
+from .model import LLMSession
 
 
 def _parse_session_id(choice: str, rows: Sequence[LLMSession]) -> str | None:

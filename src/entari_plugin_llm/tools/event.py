@@ -16,7 +16,6 @@ from ..log import logger
 
 
 class LLMToolEvent:
-
     def check_result(self, value: Any) -> Result[JSON_TYPE] | None:
         if isinstance(value, (str, int, float, bool, type(None), list, dict)):
             return Result(value)
@@ -84,4 +83,3 @@ def _register_tool(_, sub: Subscriber):
     )  # type: ignore
     logger.debug(f"Registered tool: {sub.__name__}")
     return True
-

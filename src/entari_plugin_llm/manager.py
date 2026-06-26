@@ -74,9 +74,7 @@ class LLMSessionManager:
     async def _load_messages(cls, session_id: str) -> list[Message]:
         async with get_db_session() as db_session:
             stmt = (
-                select(SessionContext)
-                .where(SessionContext.session_id == session_id)
-                .order_by(SessionContext.id.asc())
+                select(SessionContext).where(SessionContext.session_id == session_id).order_by(SessionContext.id.asc())
             )
             contexts = list((await db_session.scalars(stmt)).all())
         return [context.message for context in contexts]

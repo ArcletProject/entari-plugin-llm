@@ -2,9 +2,9 @@ from arclet.entari import declare_static, metadata, plugin
 from arclet.entari.plugin import PluginRole
 
 from .config import Config, _conf
+from .event import LLMCollectVariableEvent as LLMCollectVariableEvent
 from .log import _suppress_litellm_logging
 from .tools import LLMToolEvent as LLMToolEvent
-from .event import LLMCollectVariableEvent as LLMCollectVariableEvent
 
 metadata(
     name="LLM 工具箱",
@@ -13,8 +13,8 @@ metadata(
         {"name": "RF-Tar-Railt", "email": "rf_tar_railt@qq.com"},
         {"name": "KomoriDev", "email": "mute231010@gmail.com"},
     ],
-    version="0.1.0",
-    description="一个通用的 LLM 工具箱插件，提供了丰富的工具和模型配置选项，支持多种 LLM 模型，并且可以轻松集成到各种应用场景中。",
+    version="0.2.0",
+    description="一个通用的 LLM 工具箱插件，提供了丰富的工具和模型配置选项，支持多种 LLM 模型。",
     urls={
         "homepage": "https://github.com/ArcletProject/entari-plugin-llm",
     },

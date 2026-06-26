@@ -61,13 +61,10 @@ class LLMService(Service):
         if user_prompt:
             payload_messages.insert(0, {"role": "system", "content": user_prompt})
             if variables:
-                VARIABLES = (
-                        "下列是用以辅助你思考回答的变量：\n" +
-                        f"\n".join(f"- **{key}**: {value!r}" for key, value in variables.items())
+                VARIABLES = "下列是用以辅助你思考回答的变量：\n" + "\n".join(
+                    f"- **{key}**: {value!r}" for key, value in variables.items()
                 )
-                payload_messages.insert(
-                    1, {"role": "system", "content": VARIABLES}
-                )
+                payload_messages.insert(1, {"role": "system", "content": VARIABLES})
 
         return {
             "model": conf.name,
@@ -255,11 +252,7 @@ class LLMService(Service):
                 break
 
             exit_loop = False
-            calls = [
-                tc
-                for tc in tool_calls
-                if isinstance(tc, litellm.ChatCompletionMessageToolCall)
-            ]
+            calls = [tc for tc in tool_calls if isinstance(tc, litellm.ChatCompletionMessageToolCall)]
             for tool_call in calls:
                 tool_message, should_exit = await self._handle_tool_call(tool_call)
                 if tool_message:
@@ -307,7 +300,7 @@ class LLMService(Service):
                 "content": [
                     {"type": "text", "text": "What’s in this image?"},
                     {"type": "image_url", "image_url": image_payload},
-                ]
+                ],
             }
         ]
 
