@@ -31,13 +31,17 @@ def render_session_list(rows: Sequence[LLMSession]) -> str:
     return "\n".join(lines)
 
 
-def render_model_list() -> str:
-    default_model = get_default_model()
+def render_model_list(current_model: str | None = None, channel: str = "$default") -> str:
+    default_model = get_default_model(channel)
     lines = [f"模型列表（共 {len(_conf.models)} 个）"]
     for model in _conf.models:
         alias = f" ({model.alias})" if model.alias else ""
-        is_default = " [默认]" if default_model == model.name else ""
-        lines.append(f"- {model.name}{alias}{is_default}")
+        line = f"- {model.name}{alias}"
+        if current_model and current_model == model.name:
+            line += " [当前]"
+        elif default_model and default_model == model.name:
+            line += " [默认]"
+        lines.append(line)
     return "\n".join(lines)
 
 

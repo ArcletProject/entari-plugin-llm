@@ -16,6 +16,7 @@ class LLMSession(Base):
     session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[str] = mapped_column(String(64), index=True)
     topic: Mapped[str] = mapped_column(String(24))
+    model: Mapped[str] = mapped_column(String(64))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
 
     total_tokens: Mapped[int] = mapped_column(default=0)

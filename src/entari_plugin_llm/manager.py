@@ -17,7 +17,7 @@ from .service import llm
 
 class LLMSessionManager:
     @classmethod
-    async def _generate_topic(cls, user_input: str, model: str | None = None) -> str:
+    async def _generate_topic(cls, user_input: str, model: str) -> str:
         prompt = (
             "请根据用户的这句输入，生成一个简短的话题标题。"
             "只输出标题，不要解释，限制在12个字以内。\n"
@@ -43,24 +43,24 @@ class LLMSessionManager:
 
     @overload
     @classmethod
-    async def _create_session(cls, user_id: str, *, topic: str, model: str | None = None) -> LLMSession: ...
+    async def _create_session(cls, user_id: str, *, topic: str, model: str) -> LLMSession: ...
 
     @overload
     @classmethod
-    async def _create_session(cls, user_id: str, *, user_input: str, model: str | None = None) -> LLMSession: ...
+    async def _create_session(cls, user_id: str, *, user_input: str, model: str) -> LLMSession: ...
 
     @classmethod
     async def _create_session(
         cls,
         user_id: str,
+        model: str,
         user_input: str | None = None,
         topic: str | None = None,
-        model: str | None = None,
     ) -> LLMSession:
         if topic is None and user_input:
             topic = await cls._generate_topic(user_input=user_input, model=model)
 
-        user_session = LLMSession(session_id=uuid4().hex, user_id=user_id, topic=topic, is_active=True)
+        user_session = LLMSession(session_id=uuid4().hex, user_id=user_id, topic=topic, model=model, is_active=True)
         async with get_db_session() as db_session:
             active_stmt = select(LLMSession).where(LLMSession.user_id == user_id, LLMSession.is_active.is_(True))
             active_sessions = (await db_session.scalars(active_stmt)).all()
@@ -132,7 +132,7 @@ class LLMSessionManager:
             user_session = await db_session.get(LLMSession, llm_session.session_id)
             if user_session is None:
                 return
-            user_session.topic = await cls._generate_topic(user_input=user_input, model=model)
+            user_session.topic = await cls._generate_topic(user_input=user_input, model=model or llm_session.model)
             await db_session.commit()
             llm_session.topic = user_session.topic
 
@@ -164,8 +164,8 @@ class LLMSessionManager:
         return user_message
 
     @classmethod
-    async def create_new_session(cls, user_id: str) -> LLMSession:
-        return await cls._create_session(user_id=user_id, topic="新对话")
+    async def create_new_session(cls, user_id: str, model: str | None = None) -> LLMSession:
+        return await cls._create_session(user_id=user_id, topic="新对话", model=model or get_model_config().name)
 
     @classmethod
     async def switch(cls, user_id: str, session_id: str) -> bool:
@@ -218,11 +218,28 @@ class LLMSessionManager:
             return {
                 "session_id": session.session_id,
                 "topic": session.topic,
+                "model": session.model,
                 "is_active": session.is_active,
                 "created_at": session.created_at,
                 "message_count": message_count,
                 "total_tokens": session.total_tokens,
             }
+
+    @classmethod
+    async def select_model(cls, user_id: str, model: str) -> bool:
+        async with get_db_session() as db_session:
+            stmt = (
+                select(LLMSession)
+                .where(LLMSession.user_id == user_id, LLMSession.is_active.is_(True))
+                .order_by(desc(LLMSession.created_at))
+                .limit(1)
+            )
+            session = await db_session.scalar(stmt)
+            if session is None:
+                return False
+            session.model = model
+            await db_session.commit()
+            return True
 
     @classmethod
     async def list_sessions(cls, user_id: str) -> Sequence[LLMSession]:
@@ -247,7 +264,7 @@ class LLMSessionManager:
             llm_session = await cls._create_session(
                 user_id=f"{session.user.id}@{session.account.platform}",
                 user_input=user_prompt.extract_plain_text(),
-                model=model,
+                model=model or get_model_config().name,
             )
 
         if llm_session.topic == "新对话":
@@ -269,7 +286,8 @@ class LLMSessionManager:
             messages,
             variables,
             stream=False,
-            model=model,
+            model=llm_session.model,
+            session_id=llm_session.session_id,
             user=session.user.name,
             on_message=on_message_callback,
         )

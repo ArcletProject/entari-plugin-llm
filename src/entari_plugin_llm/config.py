@@ -5,6 +5,7 @@ from arclet.entari.config import model_field
 
 from ._jsondata import get_default_model
 from .exception import ModelNotFoundError
+from .log import log
 
 
 class ScopedModel(BasicConfModel):
@@ -74,30 +75,36 @@ class Config(BasicConfModel, extra="allow"):
 _conf = plugin_config(Config)
 
 
-def get_model_config(model_name: str | None = None) -> ScopedModel:
+def get_model_config(model_name: str | None = None, channel: str = "$default") -> ScopedModel:
     if model_name is None:
         if not _conf.models:
             raise ModelNotFoundError("No models configured.")
 
-        model_name = get_default_model()
+        model_name = get_default_model(channel)
+        model = next((m for m in _conf.models if m.name == model_name or m.alias == model_name), None)
+    else:
+        model = next((m for m in _conf.models if m.name == model_name or m.alias == model_name), None)
+        if not model:
+            log("warning", f"Model {model_name} not found in config. Using default model instead.")
+            model_name = get_default_model(channel)
+            model = next((m for m in _conf.models if m.name == model_name or m.alias == model_name), None)
 
-    for model in _conf.models:
-        if model.name == model_name or model.alias == model_name:
-            model_cp = ScopedModel(
-                name=model.name,
-                alias=model.alias,
-                api_key=model.api_key,
-                base_url=model.base_url,
-                prompt=model.prompt,
-                extra=model.extra,
-            )
-            if not model.api_key and _conf.api_key:
-                model_cp.api_key = _conf.api_key
-            if model.base_url == "https://api.openai.com/v1" and _conf.base_url != "https://api.openai.com/v1":
-                model_cp.base_url = _conf.base_url
-            if not model.prompt and _conf.prompt:
-                model_cp.prompt = _conf.prompt
-            return model_cp
+    if model:
+        model_cp = ScopedModel(
+            name=model.name,
+            alias=model.alias,
+            api_key=model.api_key,
+            base_url=model.base_url,
+            prompt=model.prompt,
+            extra=model.extra,
+        )
+        if not model.api_key and _conf.api_key:
+            model_cp.api_key = _conf.api_key
+        if model.base_url == "https://api.openai.com/v1" and _conf.base_url != "https://api.openai.com/v1":
+            model_cp.base_url = _conf.base_url
+        if not model.prompt and _conf.prompt:
+            model_cp.prompt = _conf.prompt
+        return model_cp
     raise ModelNotFoundError(f"Model {model_name} not found in config.")
 
 
