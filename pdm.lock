@@ -5,36 +5,51 @@
 groups = ["default", "browser", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:57767be34282b501e243a36622b2985a8535637a82de2032a60184c919897cff"
+content_hash = "sha256:c98adf159d9ad896b6e11a83130e1156e009e6b12a1dc309eb18200a6f792794"
 
 [[metadata.targets]]
 requires_python = ">=3.11"
 
 [[package]]
 name = "agno"
-version = "2.6.19"
-requires_python = "<4,>=3.7"
+version = "2.7.1"
+requires_python = "<4,>=3.9"
 summary = "The programming language for agentic software."
 groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
+    "agnoctl>=0.1.1",
     "docstring-parser",
-    "gitpython",
     "h11>=0.16.0",
     "httpx[http2]",
     "packaging",
     "pydantic",
     "pydantic-settings",
-    "python-dotenv",
-    "python-multipart",
     "pyyaml",
     "rich",
-    "typer",
     "typing-extensions",
 ]
 files = [
-    {file = "agno-2.6.19-py3-none-any.whl", hash = "sha256:8a8a5a061e692cf9aa275a77f4bf09580b13505a4e04fe7371d238611016ef82"},
-    {file = "agno-2.6.19.tar.gz", hash = "sha256:4d4b26820cb23d719bfc86aafa14e6e5cd0c7088b8401d1b1ca6d39ab1f8bc5e"},
+    {file = "agno-2.7.1-py3-none-any.whl", hash = "sha256:4fbb23067e13a1efff41d33462a226445aeba7e606276260c07b4593174b99f0"},
+    {file = "agno-2.7.1.tar.gz", hash = "sha256:b73f321dcd44a25bf72e93624c6ef742a25fdc421faf3c7fe85eadfb20755ec5"},
+]
+
+[[package]]
+name = "agnoctl"
+version = "0.1.1"
+requires_python = "<4,>=3.9"
+summary = "The Agno CLI: connect and operate AgentOS from the terminal, built for humans and coding agents"
+groups = ["dev"]
+marker = "python_version >= \"3.11\""
+dependencies = [
+    "httpx",
+    "rich",
+    "tomli; python_version < \"3.11\"",
+    "typer",
+]
+files = [
+    {file = "agnoctl-0.1.1-py3-none-any.whl", hash = "sha256:5bc17b2dfcfe78a26dbe06b3cf7f904567b400035ca03b554d23d2d815d7142f"},
+    {file = "agnoctl-0.1.1.tar.gz", hash = "sha256:77d9f1a1474d3895c952e67dcea88d7e3dd6c8d783e524b5456e0f2c833c2628"},
 ]
 
 [[package]]
@@ -280,7 +295,7 @@ files = [
 
 [[package]]
 name = "arclet-entari"
-version = "0.18.0rc4"
+version = "0.18.1"
 requires_python = ">=3.10"
 summary = "Simple IM Framework based on satori-python"
 groups = ["default", "browser", "dev"]
@@ -295,28 +310,28 @@ dependencies = [
     "simpleeval>=1.0.3",
 ]
 files = [
-    {file = "arclet_entari-0.18.0rc4-py3-none-any.whl", hash = "sha256:2f8160c0cf9d49fa4773c8340aa54d4712ce5b205cf210673c9c4d50c68153d3"},
-    {file = "arclet_entari-0.18.0rc4.tar.gz", hash = "sha256:a9406c82da2aa4f0e75bce729ceaeca722218a3458ac8e1e976b29603be60a69"},
+    {file = "arclet_entari-0.18.1-py3-none-any.whl", hash = "sha256:56148a56d09022148bfd974c2b18a3b8c1d3d94fd93bbd1b8a41f4063409cc23"},
+    {file = "arclet_entari-0.18.1.tar.gz", hash = "sha256:13399468c8037c09e8da0919b4d5d24a5c83e5bf9dfa9b4cc89131b8e099d538"},
 ]
 
 [[package]]
 name = "arclet-entari"
-version = "0.18.0rc4"
+version = "0.18.1"
 extras = ["cron", "dotenv", "reload", "yaml"]
 requires_python = ">=3.10"
 summary = "Simple IM Framework based on satori-python"
-groups = ["default"]
+groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
-    "arclet-entari==0.18.0rc4",
+    "arclet-entari==0.18.1",
     "croniter>=5.0.1",
     "python-dotenv>=1.0.1",
     "ruamel-yaml>=0.18.10",
     "watchfiles>=1.0.3",
 ]
 files = [
-    {file = "arclet_entari-0.18.0rc4-py3-none-any.whl", hash = "sha256:2f8160c0cf9d49fa4773c8340aa54d4712ce5b205cf210673c9c4d50c68153d3"},
-    {file = "arclet_entari-0.18.0rc4.tar.gz", hash = "sha256:a9406c82da2aa4f0e75bce729ceaeca722218a3458ac8e1e976b29603be60a69"},
+    {file = "arclet_entari-0.18.1-py3-none-any.whl", hash = "sha256:56148a56d09022148bfd974c2b18a3b8c1d3d94fd93bbd1b8a41f4063409cc23"},
+    {file = "arclet_entari-0.18.1.tar.gz", hash = "sha256:13399468c8037c09e8da0919b4d5d24a5c83e5bf9dfa9b4cc89131b8e099d538"},
 ]
 
 [[package]]
@@ -651,7 +666,7 @@ name = "croniter"
 version = "6.2.2"
 requires_python = ">=3.9"
 summary = "croniter provides iteration for datetime object with cron like format"
-groups = ["default"]
+groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
     "python-dateutil",
@@ -724,7 +739,7 @@ files = [
 
 [[package]]
 name = "entari-plugin-database"
-version = "0.3.2"
+version = "0.3.3"
 requires_python = ">=3.10"
 summary = "Entari plugin for SQLAlchemy ORM"
 groups = ["default"]
@@ -739,13 +754,13 @@ dependencies = [
     "tarina<0.8.0,>=0.7.1",
 ]
 files = [
-    {file = "entari_plugin_database-0.3.2-py3-none-any.whl", hash = "sha256:6bd0593054e82257376f0f14ab713ecb6ed9d410b73b107100b6f6765e19651e"},
-    {file = "entari_plugin_database-0.3.2.tar.gz", hash = "sha256:49066ec1049e7e6cf7c3ebfe5971817e5c78d7fe7cbc571170b8c3812f9ed322"},
+    {file = "entari_plugin_database-0.3.3-py3-none-any.whl", hash = "sha256:cb45c52e6ef2a9a4d3b3cf5a560e6200c2f52cfd8ed1ed7ae284f09a4a038e09"},
+    {file = "entari_plugin_database-0.3.3.tar.gz", hash = "sha256:6391f225c859ccd5ad6e1e19b6cf4c5697f8f1cf88b89e393d450e6c38acc193"},
 ]
 
 [[package]]
 name = "entari-plugin-server"
-version = "0.7.1"
+version = "0.7.3"
 requires_python = ">=3.10"
 summary = "Entari plugin for running Satori Server"
 groups = ["dev"]
@@ -755,8 +770,8 @@ dependencies = [
     "satori-python-server<1.4.0,>=1.3.0",
 ]
 files = [
-    {file = "entari_plugin_server-0.7.1-py3-none-any.whl", hash = "sha256:e3f3176eb6da4f4773475122476508293bc211ccfc847f377e5545d7b86afc51"},
-    {file = "entari_plugin_server-0.7.1.tar.gz", hash = "sha256:a5d2c902651c6cdbbb933bd2158f420a86461f9daa15fb349ab681c7c61511dd"},
+    {file = "entari_plugin_server-0.7.3-py3-none-any.whl", hash = "sha256:7bb9f8a35d4a23709b661b8be2377faf4cb0f702e40e6c265b3c51e245ee7128"},
+    {file = "entari_plugin_server-0.7.3.tar.gz", hash = "sha256:7e19c1e534e5a58c278059b4b212aa591a94c887c779f882b438df2ca94c32f0"},
 ]
 
 [[package]]
@@ -959,37 +974,6 @@ marker = "python_version >= \"3.11\""
 files = [
     {file = "fsspec-2026.4.0-py3-none-any.whl", hash = "sha256:11ef7bb35dab8a394fde6e608221d5cf3e8499401c249bebaeaad760a1a8dec2"},
     {file = "fsspec-2026.4.0.tar.gz", hash = "sha256:301d8ac70ae90ef3ad05dcf94d6c3754a097f9b5fe4667d2787aa359ec7df7e4"},
-]
-
-[[package]]
-name = "gitdb"
-version = "4.0.12"
-requires_python = ">=3.7"
-summary = "Git Object Database"
-groups = ["dev"]
-marker = "python_version >= \"3.11\""
-dependencies = [
-    "smmap<6,>=3.0.1",
-]
-files = [
-    {file = "gitdb-4.0.12-py3-none-any.whl", hash = "sha256:67073e15955400952c6565cc3e707c554a4eea2e428946f7a4c162fab9bd9bcf"},
-    {file = "gitdb-4.0.12.tar.gz", hash = "sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571"},
-]
-
-[[package]]
-name = "gitpython"
-version = "3.1.50"
-requires_python = ">=3.7"
-summary = "GitPython is a Python library used to interact with Git repositories"
-groups = ["dev"]
-marker = "python_version >= \"3.11\""
-dependencies = [
-    "gitdb<5,>=4.0.1",
-    "typing-extensions>=3.10.0.2; python_version < \"3.10\"",
-]
-files = [
-    {file = "gitpython-3.1.50-py3-none-any.whl", hash = "sha256:d352abe2908d07355014abdd21ddf798c2a961469239afec4962e9da884858f9"},
-    {file = "gitpython-3.1.50.tar.gz", hash = "sha256:80da2d12504d52e1f998772dc5baf6e553f8d2fcfe1fcc226c9d9a2ee3372dcc"},
 ]
 
 [[package]]
@@ -2395,7 +2379,7 @@ name = "python-dateutil"
 version = "2.9.0.post0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 summary = "Extensions to the standard Python datetime module"
-groups = ["default"]
+groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
     "six>=1.5",
@@ -2790,7 +2774,7 @@ name = "ruamel-yaml"
 version = "0.19.1"
 requires_python = ">=3.9"
 summary = "ruamel.yaml is a YAML parser/emitter that supports roundtrip preservation of comments, seq/map flow style, and map key order"
-groups = ["default"]
+groups = ["dev"]
 marker = "python_version >= \"3.11\""
 files = [
     {file = "ruamel_yaml-0.19.1-py3-none-any.whl", hash = "sha256:27592957fedf6e0b62f281e96effd28043345e0e66001f97683aa9a40c667c93"},
@@ -2799,76 +2783,76 @@ files = [
 
 [[package]]
 name = "ruff"
-version = "0.15.19"
+version = "0.15.20"
 requires_python = ">=3.7"
 summary = "An extremely fast Python linter and code formatter, written in Rust."
 groups = ["dev"]
 marker = "python_version >= \"3.11\""
 files = [
-    {file = "ruff-0.15.19-py3-none-linux_armv6l.whl", hash = "sha256:922d1eb283161564759bd49f507e91dc6112c15da8bd5b84ed714e086243cf86"},
-    {file = "ruff-0.15.19-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:4d190d8f62a0b94aba8f721116538a9ee29b1e74d26650846ba9b99f0ae21c40"},
-    {file = "ruff-0.15.19-py3-none-macosx_11_0_arm64.whl", hash = "sha256:5a2c86ba6870dd415a9d9eb8be94d7924ebec6a26ffc7958ec7ca29d4bff967d"},
-    {file = "ruff-0.15.19-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:82b432bc087264aea70fd25ac198918b70bd9e2aa0db4297b0bb91bbfbbc63ce"},
-    {file = "ruff-0.15.19-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:8530a09d03b3a8c994f8b559a7dcdabc690bcd3f78ef276c38c83166798ebf56"},
-    {file = "ruff-0.15.19-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:87bf21fb3875fe69f0eacc825411657e2e85589cce633c35c0adf1113649c62b"},
-    {file = "ruff-0.15.19-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f9b229cb3ef56ecc2c1c8ebeca64b7a7740ccaef40a9eb097e78dde5a8560b83"},
-    {file = "ruff-0.15.19-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c6c754515be7b76afe6e7e62df7776709571bcfc1631183828afcf3bafa869e3"},
-    {file = "ruff-0.15.19-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6a498f82e0f4d8904c4e0aea5139cdfac1f39d19a3c51d491292f63a36e83b2e"},
-    {file = "ruff-0.15.19-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:d48caa34488fb521fd0ef4aea2b0e8fe758298df044138f0d67b687a6a0d07ed"},
-    {file = "ruff-0.15.19-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:4171b6613effa9363cd46dd4f75bd1827b6d1b946b5e278ed0c600d305379445"},
-    {file = "ruff-0.15.19-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:27c15b2a241dd4d995557949a094fe78b8ad99122a38ccae1595849bcc947b3f"},
-    {file = "ruff-0.15.19-py3-none-musllinux_1_2_i686.whl", hash = "sha256:ed03b7862d68f0a8771d50ee129980cbf1b113f96e250b73954bc292f689e0bb"},
-    {file = "ruff-0.15.19-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:08143f0685ae278b30727ea72e90c61e5bd9c31b91aac4f5bb989538f73d24b8"},
-    {file = "ruff-0.15.19-py3-none-win32.whl", hash = "sha256:8f47f0f92952af2557212bb10cf3e695cd4cf28b2c6e42cdb18ec6c9ebfa19da"},
-    {file = "ruff-0.15.19-py3-none-win_amd64.whl", hash = "sha256:efeca47ee3f9d4a7162655a3b8e6ee4a878646044233978d4d2c1ff8cdd914f0"},
-    {file = "ruff-0.15.19-py3-none-win_arm64.whl", hash = "sha256:6c6b607466e47349332eb1d9be52fb1467423fc07c217341af41cd0f3f0573be"},
-    {file = "ruff-0.15.19.tar.gz", hash = "sha256:edc27f7172a93b32b102687009d6a588508815072141543ae603a8b9b0823063"},
+    {file = "ruff-0.15.20-py3-none-linux_armv6l.whl", hash = "sha256:00e188c53e499c3c1637f73c91dcf2fb56d576cab76ce1be50a27c4e80e37078"},
+    {file = "ruff-0.15.20-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:9ebd1fd9b9c95fc0bd7b2761aebec1f030013d2e193a2901b224af68fe47251b"},
+    {file = "ruff-0.15.20-py3-none-macosx_11_0_arm64.whl", hash = "sha256:c5b16cdd67ca108185cd36dce98c576350c03b1660a751de725fb049193a0632"},
+    {file = "ruff-0.15.20-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3413bb3c3d2ca6a8208f1f4809cd2dca3c6de6d0b491c0e70847672bde6e6efd"},
+    {file = "ruff-0.15.20-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:bd7ec42b3bb3da066488db093308a69c4ac5ee6d2af333a86ba6e2eb2e7dd44b"},
+    {file = "ruff-0.15.20-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e1a36ad0eb77fba9aabfb69ede54de6f376d04ac18ebea022847046d340a8267"},
+    {file = "ruff-0.15.20-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:b6df3b1e4610432f0386dba04d853b5f08cbbc903410c6fcc02f620f05aff53c"},
+    {file = "ruff-0.15.20-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:e89f198a1ea6ef0d727c1cf16088bc91a6cb0ab947dedc966715691647186eae"},
+    {file = "ruff-0.15.20-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:309809086c2acb67624950a3c8133e80f32d0d3e27106c0cd60ff26657c9f24b"},
+    {file = "ruff-0.15.20-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:2d2374caa2f2c2f9e2b7da0a50802cfb8b79f55a9b5e49379f564544fbf56487"},
+    {file = "ruff-0.15.20-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:a1ed17b65293e0c2f22fc387bc13198a5de94bf4429589b0ff6946b0feaf21a3"},
+    {file = "ruff-0.15.20-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:f701305e66b38ea6c91882490eb73459796808e4c6362a1b765255e0cdcd4053"},
+    {file = "ruff-0.15.20-py3-none-musllinux_1_2_i686.whl", hash = "sha256:5b9c0c367ad8e5d0d5b5b8537864c469a0a0e55417aadfbeca41fa61333be9f4"},
+    {file = "ruff-0.15.20-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:01cc00dd58f0df339d0e902219dd53990ea99996a0344e5d9cc8d45d5307e460"},
+    {file = "ruff-0.15.20-py3-none-win32.whl", hash = "sha256:ed65ef510e43a137207e0f01cfcf998aeddb1aeeda5c9d35023e910284d7cf21"},
+    {file = "ruff-0.15.20-py3-none-win_amd64.whl", hash = "sha256:a525c81c70fb0380344dd1d8745d8cc1c890b7fc94a58d5a07bd8eb9557b8415"},
+    {file = "ruff-0.15.20-py3-none-win_arm64.whl", hash = "sha256:2f5b2a6d614e8700388806a14996c40fab2c47b819ef57d790a34878858ed9ca"},
+    {file = "ruff-0.15.20.tar.gz", hash = "sha256:1416eb04349192646b54de98f146c4f59afe37d0decfc02c3cbbf396f3a28566"},
 ]
 
 [[package]]
 name = "satori-python-adapter-console"
-version = "0.5.3"
+version = "0.6.0"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, adapter for Nonechat"
 groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
     "nonechat<0.7.0,>=0.6.0",
-    "satori-python-server<1.4.0,>=1.3.3",
+    "satori-python-server<1.4.0,>=1.3.7",
 ]
 files = [
-    {file = "satori_python_adapter_console-0.5.3-py3-none-any.whl", hash = "sha256:b449a8d336b7791baefaf95f3b84d8d314014302f15d2d660d79827215566af1"},
-    {file = "satori_python_adapter_console-0.5.3.tar.gz", hash = "sha256:381d7b82e6c7836ccb0ba233c24094b50919cc796208f57f93a63366113e3a17"},
+    {file = "satori_python_adapter_console-0.6.0-py3-none-any.whl", hash = "sha256:042365b28ac2adbf2edbcf848f8d8833c5687baf83d6472c0a7e9eba6726e7c5"},
+    {file = "satori_python_adapter_console-0.6.0.tar.gz", hash = "sha256:411865a37a492e21e0c5e117f2759c0781b0b44a69b066fddc929c15393fa3ca"},
 ]
 
 [[package]]
 name = "satori-python-adapter-milky"
-version = "0.4.0"
+version = "0.5.0"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, adapter for Milky"
 groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
-    "satori-python-server<1.4.0,>=1.3.3",
+    "satori-python-server<1.4.0,>=1.3.7",
 ]
 files = [
-    {file = "satori_python_adapter_milky-0.4.0-py3-none-any.whl", hash = "sha256:245063a0baf83395e1f30421855361598dc8e8cb06b9841c220f12d7fab6524c"},
-    {file = "satori_python_adapter_milky-0.4.0.tar.gz", hash = "sha256:b6430b861a0137da1e76107916ab05cb15ecbbd742619205cde55e51dd1efba1"},
+    {file = "satori_python_adapter_milky-0.5.0-py3-none-any.whl", hash = "sha256:ab0931a99ea9ff26469050d27148a1e9b7abe098f112f083669109b5bd30173a"},
+    {file = "satori_python_adapter_milky-0.5.0.tar.gz", hash = "sha256:c003859c30d68c91b100b4d8b3617503d121d95a25d6753b869958ef96756c38"},
 ]
 
 [[package]]
 name = "satori-python-adapter-onebot11"
-version = "0.4.4"
+version = "0.5.0"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, adapter for OneBot 11"
 groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
-    "satori-python-server<1.4.0,>=1.3.3",
+    "satori-python-server<1.4.0,>=1.3.7",
 ]
 files = [
-    {file = "satori_python_adapter_onebot11-0.4.4-py3-none-any.whl", hash = "sha256:259f7e6b3704314d23f2717347e3b50a176ff4d8570aac3a4d106907c2dc3b18"},
-    {file = "satori_python_adapter_onebot11-0.4.4.tar.gz", hash = "sha256:455e3fbadaca9dc0089a075a1dac9417218d0ddfc65cb5af4b0f459cc9b9edda"},
+    {file = "satori_python_adapter_onebot11-0.5.0-py3-none-any.whl", hash = "sha256:d9d52cf581152dff369f8833cb66a0b9349d0c6e6d796bd2f14db4e93ac020a9"},
+    {file = "satori_python_adapter_onebot11-0.5.0.tar.gz", hash = "sha256:2ffd70f2e25afa64d69715102e5392124fdf3b1c27a2ebddd57f30bf929f8d6b"},
 ]
 
 [[package]]
@@ -2893,7 +2877,7 @@ files = [
 
 [[package]]
 name = "satori-python-core"
-version = "1.3.5"
+version = "1.3.6"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, specify common part"
 groups = ["default", "browser", "dev"]
@@ -2902,13 +2886,13 @@ dependencies = [
     "typing-extensions>=4.7.0",
 ]
 files = [
-    {file = "satori_python_core-1.3.5-py3-none-any.whl", hash = "sha256:ef9d6ecfb002d9808cf7d2b9b6c391529c9a9673cd2d63aa3887f7f91e63d985"},
-    {file = "satori_python_core-1.3.5.tar.gz", hash = "sha256:898620707d72cdcb838476b42a253ffd7694349ce8e5a303a058366f02074a0d"},
+    {file = "satori_python_core-1.3.6-py3-none-any.whl", hash = "sha256:d94aec022a117216cf792db3589e5f9f65e4ea5f57fa717fe98dd26f67f84cb3"},
+    {file = "satori_python_core-1.3.6.tar.gz", hash = "sha256:58d562604e4cad04d7ef1143ce3cd5f579759b880a619d42be4f814eceb4fea0"},
 ]
 
 [[package]]
 name = "satori-python-server"
-version = "1.3.4"
+version = "1.3.7"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, specify server part"
 groups = ["dev"]
@@ -2919,14 +2903,14 @@ dependencies = [
     "launart>=0.8.2",
     "loguru>=0.7.2",
     "python-multipart>=0.0.9",
-    "satori-python-core<1.4.0,>=1.3.0",
+    "satori-python-core<1.4.0,>=1.3.6",
     "starlette>=0.40.0",
     "websockets>=15.0.1",
     "yarl>=1.9.4",
 ]
 files = [
-    {file = "satori_python_server-1.3.4-py3-none-any.whl", hash = "sha256:9bbcc7e1f9b459d959056cd4203199cded0eb3396e5f5bdd1f51a361d3bf9eec"},
-    {file = "satori_python_server-1.3.4.tar.gz", hash = "sha256:5bc45dbd7c4fe57b4b23e37f2b91cd2f157eba19aef97942267d71633cfcc5f0"},
+    {file = "satori_python_server-1.3.7-py3-none-any.whl", hash = "sha256:a5fc16320c673120cb4d6a985ffaf84ba228a30eff00d221af7ef22af568d6de"},
+    {file = "satori_python_server-1.3.7.tar.gz", hash = "sha256:97c1f75a1037a1a5dd2ed33a5a38738015c58d1f133dad1621c4f5c419598182"},
 ]
 
 [[package]]
@@ -2958,23 +2942,11 @@ name = "six"
 version = "1.17.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 summary = "Python 2 and 3 compatibility utilities"
-groups = ["default"]
+groups = ["dev"]
 marker = "python_version >= \"3.11\""
 files = [
     {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
     {file = "six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"},
-]
-
-[[package]]
-name = "smmap"
-version = "5.0.3"
-requires_python = ">=3.7"
-summary = "A pure Python implementation of a sliding window memory map manager"
-groups = ["dev"]
-marker = "python_version >= \"3.11\""
-files = [
-    {file = "smmap-5.0.3-py3-none-any.whl", hash = "sha256:c106e05d5a61449cf6ba9a1e650227ecfb141590d2a98412103ff35d89fc7b2f"},
-    {file = "smmap-5.0.3.tar.gz", hash = "sha256:4d9debb8b99007ae47165abc08670bd74cb74b5227dda7f643eccc4e9eb5642c"},
 ]
 
 [[package]]
@@ -3412,7 +3384,7 @@ name = "watchfiles"
 version = "1.2.0"
 requires_python = ">=3.10"
 summary = "Simple, modern and high performance file watching and code reload in python."
-groups = ["default"]
+groups = ["dev"]
 marker = "python_version >= \"3.11\""
 dependencies = [
     "anyio>=3.0.0",
