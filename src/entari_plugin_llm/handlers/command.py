@@ -2,6 +2,7 @@ from arclet.alconna import Alconna, Args, MultiVar, Option, Subcommand, store_tr
 from arclet.entari import MessageChain, Session, command, metadata
 from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import BLOCK, Contexts
+from satori import At
 
 from .._jsondata import set_default_model
 from ..config import get_model_config, get_model_list
@@ -36,6 +37,7 @@ llm_alc = Alconna(
     Subcommand("delete", Args["session_id?#会话ID", str], help_text="删除会话"),
     Subcommand(
         "session",
+        Args["user_id?#指定用户", str | At],
         Option("-l|--list", help_text="查看会话列表"),
         help_text="查看当前会话信息",
     ),
@@ -106,8 +108,15 @@ async def _(session: Session, session_id: command.Match[str]):
 
 
 @llm_disp.assign("session.list")
-async def _(session: Session):
-    rows = await LLMSessionManager.list_sessions(f"{session.account.platform}:{session.user.id}")
+async def _(session: Session, user_id: command.Match[str | At]):
+    if user_id.available:
+        if isinstance(user_id.result, At):
+            session_id = f"{session.account.platform}:{user_id.result.id}"
+        else:
+            session_id = f"{session.account.platform}:{user_id.result}"
+    else:
+        session_id = f"{session.account.platform}:{session.user.id}"
+    rows = await LLMSessionManager.list_sessions(session_id)
 
     if not rows:
         await session.send("暂无会话")
@@ -118,8 +127,15 @@ async def _(session: Session):
 
 
 @llm_disp.assign("session", priority=20)
-async def _(session: Session):
-    info = await LLMSessionManager.get_current_session_info(f"{session.account.platform}:{session.user.id}")
+async def _(session: Session, user_id: command.Match[str | At]):
+    if user_id.available:
+        if isinstance(user_id.result, At):
+            session_id = f"{session.account.platform}:{user_id.result.id}"
+        else:
+            session_id = f"{session.account.platform}:{user_id.result}"
+    else:
+        session_id = f"{session.account.platform}:{session.user.id}"
+    info = await LLMSessionManager.get_current_session_info(session_id)
     if info is None:
         await session.send("当前没有活动会话")
         return BLOCK

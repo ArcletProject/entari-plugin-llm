@@ -257,10 +257,10 @@ class LLMSessionManager:
     ) -> str:
         user_message = await cls._build_user_message(user_prompt, session=session, model=model)
 
-        llm_session = await cls._get_active_session(f"{session.account.platform}@{session.user.id}")
+        llm_session = await cls._get_active_session(f"{session.account.platform}:{session.user.id}")
         if new or llm_session is None:
             llm_session = await cls._create_session(
-                user_id=f"{session.account.platform}@{session.user.id}",
+                user_id=f"{session.account.platform}:{session.user.id}",
                 user_input=user_prompt.extract_plain_text(),
                 model=model or get_model_config().name,
             )

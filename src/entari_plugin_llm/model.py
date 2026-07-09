@@ -1,13 +1,30 @@
+import json
 from datetime import datetime
 from typing import Literal, TypeAlias, cast
 
 from entari_plugin_database import Base
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import TEXT, TypeDecorator
 
 from ._types import Message
 
 ROLE: TypeAlias = Literal["user", "assistant", "tool"]
+
+
+class JSONText(TypeDecorator):
+    impl = TEXT
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return json.dumps(value, ensure_ascii=False)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        return json.loads(value)
 
 
 class LLMSession(Base):
@@ -32,11 +49,11 @@ class SessionContext(Base):
     session_id: Mapped[str] = mapped_column(String(64), ForeignKey("entari_plugin_llm_session.session_id"), index=True)
 
     role: Mapped[ROLE] = mapped_column(String(16))
-    content: Mapped[list] = mapped_column(JSON, nullable=True)
+    content: Mapped[list] = mapped_column(JSONText, nullable=True)
     reasoning_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     name: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
-    tool_calls: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    tool_calls: Mapped[list | None] = mapped_column(JSONText, nullable=True)
     tool_call_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     session = relationship("LLMSession", back_populates="contexts")
