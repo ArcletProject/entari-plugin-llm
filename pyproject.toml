@@ -7,12 +7,12 @@ authors = [
     {"name" = "KomoriDev", "email" = "mute231010@gmail.com"}
 ]
 dependencies = [
-    "arclet.entari>=0.18.0",
+    "arclet.entari[yaml,cron,reload,dotenv]>=0.18.3",
+    "agno[sqlite]>=2.7.2",
     "docstring-parser>=0.17.0",
-    "litellm>=1.83.7",
-    "entari-plugin-database>=0.3.2",
+    "litellm>=1.84.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.14"
 readme = "README.md"
 license = {"text" = "MIT"}
 
@@ -21,17 +21,16 @@ browser = [
     "entari-plugin-browser>=0.5.4",
 ]
 google = [
-    "litellm[google]>=1.83.7",
+    "litellm[google]>=1.84.0",
 ]
 
 [dependency-groups]
 dev = [
-    "arclet.entari[yaml,cron,reload,dotenv]>=0.18.0",
+    "arclet.entari[yaml,cron,reload,dotenv]>=0.18.3",
     "entari-plugin-server>=0.7.1",
     "satori-python-adapter-onebot11>=0.4.2",
     "ruff>=0.14.10",
     "satori-python-adapter-console>=0.5.1",
-    "agno>=2.5.8",
     "ddgs>=9.11.2",
     "satori-python-adapter-milky>=0.3.1",
 ]

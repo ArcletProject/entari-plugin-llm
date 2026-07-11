@@ -32,10 +32,6 @@ class Config(BasicConfModel, extra="allow"):
     """全局提示词。用作没有特定提示词的模型的后备"""
     models: list[ScopedModel] = model_field(default_factory=list)
     """配置模型及其各自设置的列表"""
-    toolcall_max_steps: int = 8
-    """单个会话中工具调用的最大步骤数"""
-    context_length: int = 50
-    """上下文长度"""
     tools: dict[str, dict[str, Any]] = model_field(default_factory=dict)
     """工具"""
 

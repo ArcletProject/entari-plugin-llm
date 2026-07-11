@@ -30,10 +30,12 @@ for tool in _conf.tools:
 from .handlers import chat as chat
 from .handlers import check as check
 from .handlers import command as command
+from .response import GenericResponse as GenericResponse
 from .service import llm as llm
 
 __all__ = [
     "llm",
     "LLMToolEvent",
     "LLMCollectVariableEvent",
+    "GenericResponse",
 ]
