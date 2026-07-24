@@ -11,7 +11,7 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from arclet.letoderea.context import Contexts, generate_contexts
+from arclet.letoderea.context import generate_contexts
 from arclet.letoderea.exceptions import ExitState, _ExitException
 from tarina import Empty
 
@@ -19,13 +19,13 @@ from ..log import logger
 from .event import LLMToolEvent, available_functions
 
 
-def _build_agno_tool(name: str, ctx: Contexts | None = None) -> Callable[..., Awaitable[str]]:
+def _build_agno_tool(name: str) -> Callable[..., Awaitable[str]]:
     """Create an Agno-compatible async callable for a named Entari tool."""
 
     sub = available_functions[name]
 
     async def _wrapper(**kwargs: Any) -> str:
-        tool_ctx = await generate_contexts(LLMToolEvent(), inherit_ctx=ctx)
+        tool_ctx = await generate_contexts(LLMToolEvent())
         logger.debug(f"Agno bridge calling tool: {name} with args: {kwargs}")
 
         try:
@@ -68,6 +68,6 @@ def _build_agno_tool(name: str, ctx: Contexts | None = None) -> Callable[..., Aw
     return _wrapper
 
 
-def get_agno_tools(ctx: Contexts | None = None) -> list[Callable[..., Awaitable[str]]]:
+def get_agno_tools() -> list[Callable[..., Awaitable[str]]]:
     """Return all registered Entari tools as Agno-compatible callables."""
-    return [_build_agno_tool(name, ctx) for name in available_functions]
+    return [_build_agno_tool(name) for name in available_functions]

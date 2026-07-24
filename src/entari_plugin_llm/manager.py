@@ -73,14 +73,11 @@ class LLMSessionManager:
         async for result in waterfall(collect_event, inherit_ctx=ctx):
             variables.update(result.value)
 
-        response = await llm.generate(
+        response = await llm._generate_for_session(
             [user_message],
             variables,
-            stream=False,
+            session=llm_session,
             model=selected_model,
-            session_id=llm_session.session_id,
-            user_id=user_id,
-            ctx=ctx,
         )
         final_answer = response.content or ""
         if not final_answer:

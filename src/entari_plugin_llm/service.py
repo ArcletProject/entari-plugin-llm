@@ -8,14 +8,13 @@ from agno.models.litellm import LiteLLM
 from agno.models.message import Message
 from agno.run.base import RunStatus
 from arclet.entari import add_service, local_data
-from arclet.letoderea.context import Contexts
 from launart import Launart, Service
 from launart.status import Phase
 
 from ._callback import TokenUsageHandler
 from .config import _conf, get_model_config
 from .response import GenericResponse
-from .sessions import AgnoSessionStore
+from .sessions import AgnoSessionStore, SessionInfo
 from .tools.bridge import get_agno_tools
 
 TOutput = TypeVar("TOutput")
@@ -58,10 +57,7 @@ class LLMService(Service):
         system: str | None = None,
         model: str | None = None,
         output: type[TOutput],
-        session_id: str | None = None,
-        user_id: str | None = None,
         ignore_user_prompt: bool = False,
-        ctx: Contexts | None = None,
         **kwargs: Any,
     ) -> GenericResponse[TOutput]: ...
 
@@ -75,10 +71,7 @@ class LLMService(Service):
         system: str | None = None,
         model: str | None = None,
         output: Literal["json_object"] | dict[str, Any],
-        session_id: str | None = None,
-        user_id: str | None = None,
         ignore_user_prompt: bool = False,
-        ctx: Contexts | None = None,
         **kwargs: Any,
     ) -> GenericResponse[Any]: ...
 
@@ -92,10 +85,7 @@ class LLMService(Service):
         system: str | None = None,
         model: str | None = None,
         output: None = None,
-        session_id: str | None = None,
-        user_id: str | None = None,
         ignore_user_prompt: bool = False,
-        ctx: Contexts | None = None,
         **kwargs: Any,
     ) -> GenericResponse[None]: ...
 
@@ -108,17 +98,60 @@ class LLMService(Service):
         system: str | None = None,
         model: str | None = None,
         output: OutputType | None = None,
-        session_id: str | None = None,
-        user_id: str | None = None,
         ignore_user_prompt: bool = False,
-        ctx: Contexts | None = None,
         **kwargs: Any,
     ) -> GenericResponse[Any]:
-        """Generate an LLM response through an Agno Agent."""
+        """Generate a stateless LLM response through an Agno Agent."""
+        if "session_id" in kwargs or "user_id" in kwargs:
+            raise TypeError("session_id and user_id are reserved for Entari chat persistence")
+        return await self._run_agent(
+            message,
+            variables,
+            stream=stream,
+            system=system,
+            model=model,
+            output=output,
+            session=None,
+            ignore_user_prompt=ignore_user_prompt,
+            request_params=kwargs,
+        )
+
+    async def _generate_for_session(
+        self,
+        message: str | list[Message],
+        variables: dict[str, Any] | None = None,
+        *,
+        session: SessionInfo,
+        model: str | None = None,
+    ) -> GenericResponse[None]:
+        """Generate a persisted response for Entari's chat session manager."""
+        return await self._run_agent(
+            message,
+            variables,
+            stream=False,
+            system=None,
+            model=model,
+            output=None,
+            session=session,
+            ignore_user_prompt=False,
+            request_params={},
+        )
+
+    async def _run_agent(
+        self,
+        message: str | list[Message],
+        variables: dict[str, Any] | None,
+        *,
+        stream: bool,
+        system: str | None,
+        model: str | None,
+        output: OutputType | None,
+        session: SessionInfo | None,
+        ignore_user_prompt: bool,
+        request_params: dict[str, Any],
+    ) -> GenericResponse[Any]:
         if output is not None and stream:
             raise ValueError("output is not supported when stream=True")
-        if session_id is not None and user_id is None:
-            raise ValueError("user_id is required when session_id is provided")
 
         model_config = get_model_config(model)
         if system is not None:
@@ -132,35 +165,31 @@ class LLMService(Service):
             variable_instructions = "下列是用以辅助你思考回答的变量：\n" + "\n".join(
                 f"- **{key}**: {value!r}" for key, value in variables.items()
             )
-            instructions = (
-                f"{instructions}\n\n{variable_instructions}"
-                if instructions
-                else variable_instructions
-            )
+            instructions = f"{instructions}\n\n{variable_instructions}" if instructions else variable_instructions
 
-        request_params = {**model_config.extra, **kwargs}
+        model_request_params = {**model_config.extra, **request_params}
         agno_model = LiteLLM(
             id=model_config.name,
             api_key=model_config.api_key,
             api_base=model_config.base_url,
-            request_params=request_params or None,
+            request_params=model_request_params or None,
         )
 
         agent_kwargs: dict[str, Any] = {
             "id": self.id,
             "model": agno_model,
             "instructions": instructions,
-            "tools": get_agno_tools(ctx),
+            "tools": get_agno_tools(),
             "markdown": False,
         }
         if output is not None:
             agent_kwargs["output_schema"] = output if output != "json_object" else {"type": "object"}
             agent_kwargs["use_json_mode"] = True
-        if self._db is not None:
-            agent_kwargs["db"] = self._db
-        if session_id is not None:
-            agent_kwargs["session_id"] = session_id
-            agent_kwargs["user_id"] = user_id
+        if session is not None:
+            if self._db is not None:
+                agent_kwargs["db"] = self._db
+            agent_kwargs["session_id"] = session.session_id
+            agent_kwargs["user_id"] = session.user_id
             agent_kwargs["add_history_to_context"] = True
             agent_kwargs["enable_session_summaries"] = True
             agent_kwargs["add_session_summary_to_context"] = False
