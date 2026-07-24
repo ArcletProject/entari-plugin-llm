@@ -1,8 +1,7 @@
-from dataclasses import dataclass
-
 from arclet.entari import Image, MessageChain, Session, command
 from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import Contexts
+from pydantic import BaseModel
 
 from entari_plugin_llm import llm
 
@@ -82,8 +81,7 @@ SYSTEM_PROMPT = """
 """
 
 
-@dataclass
-class Output:
+class Output(BaseModel):
     output: str
     keyword: list[str]
     block: bool
