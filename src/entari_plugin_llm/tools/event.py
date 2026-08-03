@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Any, get_args
+from typing import Annotated, Any, TypeAlias, get_args
 
 from arclet.entari import MessageCreatedEvent
 from arclet.entari.config.dc_schema import _MISSING, SchemaGenerator
@@ -11,8 +11,10 @@ from tarina import Empty
 from tarina.generic import get_origin, origin_is_union
 from typing_extensions import Doc
 
-from .._types import JSON_TYPE
 from ..log import logger
+
+JSON_VALUE: TypeAlias = str | int | float | bool | None
+JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | JSON_VALUE
 
 
 class LLMToolEvent:

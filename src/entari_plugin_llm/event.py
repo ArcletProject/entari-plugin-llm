@@ -5,24 +5,25 @@ from arclet.entari import MessageChain, Session
 from arclet.entari.const import ITEM_ACCOUNT, ITEM_SESSION
 from arclet.letoderea import Contexts, Result, define, provide
 
-from .model import LLMSession
+from .sessions import SessionInfo
 
 
 @dataclass
 class LLMCollectVariableEvent:
     session: Session
-    llm_session: LLMSession
+    llm_session: SessionInfo
     user_message: MessageChain
 
     def check_result(self, value) -> Result[dict[str, Any]] | None:
         if isinstance(value, dict):
             return Result(value)
+        return None
 
 
 collect_vars = define(LLMCollectVariableEvent, name="llm/collect_vars")
 collect_vars.providers.extend(
     [
-        provide(LLMSession, call="$llm_session"),
+        provide(SessionInfo, call="$llm_session"),
         provide(MessageChain, call="$user_message"),
     ]
 )

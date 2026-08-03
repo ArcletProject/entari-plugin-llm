@@ -5,10 +5,10 @@ from arclet.entari import Session
 from ._jsondata import get_default_model
 from .config import _conf
 from .manager import LLMSessionManager
-from .model import LLMSession
+from .sessions import SessionInfo
 
 
-def _parse_session_id(choice: str, rows: Sequence[LLMSession]) -> str | None:
+def _parse_session_id(choice: str, rows: Sequence[SessionInfo]) -> str | None:
     text = choice.strip()
     if not text:
         return None
@@ -23,7 +23,7 @@ def _parse_session_id(choice: str, rows: Sequence[LLMSession]) -> str | None:
     return None
 
 
-def render_session_list(rows: Sequence[LLMSession]) -> str:
+def render_session_list(rows: Sequence[SessionInfo]) -> str:
     lines = [f"会话列表（共 {len(rows)} 个）"]
     for idx, row in enumerate(rows, 1):
         flag = " [当前]" if row.is_active else ""
@@ -52,12 +52,12 @@ async def select_session(session: Session) -> str | None:
         return None
 
     prompt_text = f"{render_session_list(rows)}\n请输入会话序号或ID："
-    resp = await session.prompt(prompt_text)
-    if resp is None:
+    response = await session.prompt(prompt_text)
+    if response is None:
         await session.send("等待超时")
         return None
 
-    selected = _parse_session_id(resp.extract_plain_text(), rows)
+    selected = _parse_session_id(response.extract_plain_text(), rows)
     if selected is None:
         await session.send("输入无效，请输入会话序号或ID")
         return None

@@ -60,5 +60,4 @@ async def reload_config(event: ConfigReload):
     new_conf = config_model_validate(Config, event.value)
     _conf.models = new_conf.models
     _conf.prompt = new_conf.prompt
-    _conf.context_length = new_conf.context_length
-    _conf.toolcall_max_steps = new_conf.toolcall_max_steps
+    _conf.tools = new_conf.tools

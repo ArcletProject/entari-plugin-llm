@@ -39,4 +39,4 @@ async def image_vision(session: Session, index: int = 0) -> str:
     except RuntimeError:
         return "无法识别图片内容"
 
-    return resp.choices[0].message.content or "无法识别图片内容"
+    return resp.content or "无法识别图片内容"
