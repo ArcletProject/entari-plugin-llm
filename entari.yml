@@ -15,11 +15,15 @@ basic:
       - httpcore._trace
       - aiosqlite.core
       - markdown_it.*
+      - hpack.*
   prefix:
     - /
   schema: true
   external_dirs:
     - src
+  superusers:
+    onebot:
+      - ${{ env.SUPERUSER }}
 plugins:
   $prelude:
     - ::auto_reload
@@ -59,7 +63,9 @@ plugins:
 #        base_url: https://generativelanguage.googleapis.com
 #      - name: "gpt-4.1-mini"
 #        alias: "gpt"
-
+    tools:
+      ::generic: {}
+      ::plugin_manager: {}
     prompt: |
       1. 你是一个由用户提供信息并回答问题的智能助手。请根据用户提供的信息，尽可能准确和简洁地回答他们的问题。
       2. 如果信息不足以回答问题，请礼貌地告知用户需要更多信息。

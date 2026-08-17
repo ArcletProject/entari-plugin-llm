@@ -7,7 +7,8 @@ from agno.db.sqlite import AsyncSqliteDb
 from agno.models.litellm import LiteLLM
 from agno.models.message import Message
 from agno.run.base import RunStatus
-from arclet.entari import add_service, local_data
+from arclet.entari import add_service, local_data, Session
+from arclet.letoderea import Contexts
 from launart import Launart, Service
 from launart.status import Phase
 
@@ -111,7 +112,7 @@ class LLMService(Service):
             system=system,
             model=model,
             output=output,
-            session=None,
+            llm_session=None,
             ignore_user_prompt=ignore_user_prompt,
             request_params=kwargs,
         )
@@ -121,8 +122,10 @@ class LLMService(Service):
         message: str | list[Message],
         variables: dict[str, Any] | None = None,
         *,
-        session: SessionInfo,
+        llm_session: SessionInfo,
         model: str | None = None,
+        ctx: Contexts | None = None,
+        session: Session | None = None,
     ) -> GenericResponse[None]:
         """Generate a persisted response for Entari's chat session manager."""
         return await self._run_agent(
@@ -132,9 +135,11 @@ class LLMService(Service):
             system=None,
             model=model,
             output=None,
-            session=session,
+            llm_session=llm_session,
             ignore_user_prompt=False,
             request_params={},
+            ctx=ctx,
+            session=session
         )
 
     async def _run_agent(
@@ -146,9 +151,11 @@ class LLMService(Service):
         system: str | None,
         model: str | None,
         output: OutputType | None,
-        session: SessionInfo | None,
+        llm_session: SessionInfo | None,
         ignore_user_prompt: bool,
         request_params: dict[str, Any],
+        ctx: Contexts | None = None,
+        session: Session | None = None,
     ) -> GenericResponse[Any]:
         if output is not None and stream:
             raise ValueError("output is not supported when stream=True")
@@ -179,17 +186,17 @@ class LLMService(Service):
             "id": self.id,
             "model": agno_model,
             "instructions": instructions,
-            "tools": get_agno_tools(),
+            "tools": get_agno_tools(session, ctx) if session is not None and ctx is not None else [],
             "markdown": False,
         }
         if output is not None:
             agent_kwargs["output_schema"] = output if output != "json_object" else {"type": "object"}
             agent_kwargs["use_json_mode"] = True
-        if session is not None:
+        if llm_session is not None:
             if self._db is not None:
                 agent_kwargs["db"] = self._db
-            agent_kwargs["session_id"] = session.session_id
-            agent_kwargs["user_id"] = session.user_id
+            agent_kwargs["session_id"] = llm_session.session_id
+            agent_kwargs["user_id"] = llm_session.user_id
             agent_kwargs["add_history_to_context"] = True
             agent_kwargs["enable_session_summaries"] = True
             agent_kwargs["add_session_summary_to_context"] = False

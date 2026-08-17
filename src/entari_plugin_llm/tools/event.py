@@ -1,9 +1,11 @@
 import inspect
+from dataclasses import dataclass
 from typing import Annotated, Any, TypeAlias, get_args
 
-from arclet.entari import MessageCreatedEvent
+from arclet.entari import MessageCreatedEvent, Session
 from arclet.entari.config.dc_schema import _MISSING, SchemaGenerator
-from arclet.letoderea import Subscriber, define
+from arclet.entari.const import ITEM_ACCOUNT, ITEM_SESSION
+from arclet.letoderea import Subscriber, define, Contexts
 from arclet.letoderea.provider import get_providers
 from arclet.letoderea.utils import Result
 from docstring_parser import parse
@@ -13,18 +15,27 @@ from typing_extensions import Doc
 
 from ..log import logger
 
-JSON_VALUE: TypeAlias = str | int | float | bool | None
+JSON_VALUE: TypeAlias = dict | list | str | int | float | bool | None
 JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | JSON_VALUE
 
 
+@dataclass
 class LLMToolEvent:
+    session: Session
+
     def check_result(self, value: Any) -> Result[JSON_TYPE] | None:
         if isinstance(value, (str, int, float, bool, type(None), list, dict)):
-            return Result(value)
+            return Result(value)  # type: ignore
 
 
 tools_pub = define(LLMToolEvent, name="tools_pub")
 tools_pub.providers.extend(get_providers(MessageCreatedEvent))
+
+
+@tools_pub.gather
+async def vars_gather(event: LLMToolEvent, context: Contexts):
+    context[ITEM_ACCOUNT] = event.session.account
+    context[ITEM_SESSION] = event.session
 
 tools = []
 available_functions: dict[str, Subscriber[JSON_TYPE]] = {}

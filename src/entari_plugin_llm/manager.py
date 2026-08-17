@@ -60,7 +60,7 @@ class LLMSessionManager:
         if user_prompt.has(Text):
             content.append({"type": "text", "text": user_prompt.extract_plain_text()})
         if user_prompt.has(Image) and litellm.supports_vision(selected_model):
-            for image in user_prompt.include(Image):
+            for image in list(user_prompt.select(Image)):
                 content.append({"type": "image_url", "image_url": {"url": image.src}})
         user_message = Message(
             role="user",
@@ -76,8 +76,10 @@ class LLMSessionManager:
         response = await llm._generate_for_session(
             [user_message],
             variables,
-            session=llm_session,
+            llm_session=llm_session,
             model=selected_model,
+            session=session,
+            ctx=ctx
         )
         final_answer = response.content or ""
         if not final_answer:
