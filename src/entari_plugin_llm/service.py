@@ -7,7 +7,7 @@ from agno.db.sqlite import AsyncSqliteDb
 from agno.models.litellm import LiteLLM
 from agno.models.message import Message
 from agno.run.base import RunStatus
-from arclet.entari import add_service, local_data, Session
+from arclet.entari import Session, add_service, local_data
 from arclet.letoderea import Contexts
 from launart import Launart, Service
 from launart.status import Phase
@@ -16,7 +16,7 @@ from ._callback import TokenUsageHandler
 from .config import _conf, get_model_config
 from .response import GenericResponse
 from .sessions import AgnoSessionStore, SessionInfo
-from .tools.bridge import get_agno_tools
+from .tools import get_agno_tools, run_llm_tools
 
 TOutput = TypeVar("TOutput")
 OutputType = Literal["json_object"] | type[Any] | dict[str, Any]
@@ -139,7 +139,7 @@ class LLMService(Service):
             ignore_user_prompt=False,
             request_params={},
             ctx=ctx,
-            session=session
+            session=session,
         )
 
     async def _run_agent(
@@ -186,7 +186,7 @@ class LLMService(Service):
             "id": self.id,
             "model": agno_model,
             "instructions": instructions,
-            "tools": get_agno_tools(session, ctx) if session is not None and ctx is not None else [],
+            "tools": get_agno_tools(),
             "markdown": False,
         }
         if output is not None:
@@ -205,10 +205,17 @@ class LLMService(Service):
         if stream:
             return GenericResponse.from_stream(agent.arun(message, stream=True))
 
-        result = await agent.arun(message)
-        if result.status is RunStatus.error:
-            raise RuntimeError(str(result.content or "Agno agent run failed"))
-        return GenericResponse.from_run_output(result, structured=output is not None)
+        response = await agent.arun(message)
+        stopped = False
+        while response.is_paused:
+            should_continue = await run_llm_tools(response, llm_session, session, ctx)
+            if not should_continue:
+                stopped = True
+                break
+            response = await agent.acontinue_run(run_id=response.run_id, requirements=response.requirements)
+        if response.status is RunStatus.error:
+            raise RuntimeError(str(response.content or "Agno agent run failed"))
+        return GenericResponse.from_run_output(response, structured=output is not None, stopped=stopped)
 
     async def vision(
         self,

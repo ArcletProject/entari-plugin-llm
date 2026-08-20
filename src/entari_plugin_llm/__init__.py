@@ -3,8 +3,9 @@ from arclet.entari.plugin import PluginRole
 
 from .config import Config, _conf
 from .event import LLMCollectVariableEvent as LLMCollectVariableEvent
+from .event import LLMToolEvent as LLMToolEvent
 from .log import _suppress_litellm_logging
-from .tools import LLMToolEvent as LLMToolEvent
+from .tools import register as register_tool
 
 metadata(
     name="LLM 工具箱",
@@ -35,7 +36,11 @@ from .service import llm as llm
 
 __all__ = [
     "llm",
-    "LLMToolEvent",
+    "chat",
+    "check",
+    "command",
+    "register_tool",
     "LLMCollectVariableEvent",
+    "LLMToolEvent",
     "GenericResponse",
 ]

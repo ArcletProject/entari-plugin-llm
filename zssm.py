@@ -113,6 +113,9 @@ async def zssm(content: command.Match[MessageChain], ctx: Contexts, session: Ses
         user_prompt += f"<type: image, id: {hash(url)}>{img_content}\n</type: image>"
 
     response = await llm.generate(user_prompt, system=SYSTEM_PROMPT, output=Output)
+    if response.stopped:
+        await session.send("执行任务已暂停")
+        return
 
     if response.output is None:
         await session.send("解析失败, 请重试", reply_to=True)

@@ -1,11 +1,12 @@
 import sys
-from arclet.entari import plugin, local_data
-from entari_plugin_llm.tools import LLMToolEvent
 
-tools = plugin.dispatch(LLMToolEvent)
+from arclet.entari import Session, local_data, plugin
+
+from entari_plugin_llm import register_tool
+from entari_plugin_llm.builtins.tools.generic import detect_superuser
 
 
-@tools
+@register_tool
 async def list_plugins() -> dict[str, dict[str, str]]:
     """
     列出当前已加载的插件名称列表。
@@ -20,28 +21,31 @@ async def list_plugins() -> dict[str, dict[str, str]]:
         p.id: {
             "name": p.metadata.name,
             "role": p.metadata.role.value,
-            "description": p.metadata.description or "No description available"
-        } if p.metadata else {
-            "name": p.id,
-            "role": "normal",
-            "description": "No description available"
+            "description": p.metadata.description or "No description available",
         }
+        if p.metadata
+        else {"name": p.id, "role": "normal", "description": "No description available"}
         for p in plugin.get_plugins()
     }
 
 
-@tools
-async def load_plugin(import_path: str, config: dict | None = None) -> str:
+@register_tool
+async def load_plugin(session: Session, import_path: str, config: dict | None = None) -> str:
     """
     加载新的插件。
 
+    **该工具需要先检测超级用户权限。**
+
     Args:
+        session (Session): 当前会话对象
         import_path: 插件的导入路径，例如 "entari_plugin_example"
         config: 可选的插件配置字典，如果插件需要配置，可以传入相应的配置
 
     Returns:
         str: 加载结果信息
     """
+    if not await detect_superuser(session):
+        return "当前用户没有权限使用此工具"
     sys.path.insert(0, str(local_data.get_cache_dir("llm")))
     try:
         plg = plugin.load_plugin(import_path, config)
@@ -54,17 +58,22 @@ async def load_plugin(import_path: str, config: dict | None = None) -> str:
         sys.path.remove(str(local_data.get_cache_dir("llm")))
 
 
-@tools
-async def unload_plugin(plugin_id: str) -> str:
+@register_tool
+async def unload_plugin(session: Session, plugin_id: str) -> str:
     """
     卸载已加载的插件。
 
+    **该工具需要先检测超级用户权限。**
+
     Args:
+        session (Session): 当前会话对象
         plugin_id: 已加载插件的 ID (插件的导入路径)
 
     Returns:
         str: 卸载结果信息
     """
+    if not await detect_superuser(session):
+        return "当前用户没有权限使用此工具"
     try:
         result = await plugin.unload_plugin_async(plugin_id)
         if not result:
@@ -74,17 +83,22 @@ async def unload_plugin(plugin_id: str) -> str:
         return f"卸载插件 {plugin_id} 失败: {e}"
 
 
-@tools
-async def reload_plugin(plugin_id: str) -> str:
+@register_tool
+async def reload_plugin(session: Session, plugin_id: str) -> str:
     """
     重新加载已加载的插件。
 
+    **该工具需要先检测超级用户权限。**
+
     Args:
+        session (Session): 当前会话对象
         plugin_id: 已加载插件的 ID (插件的导入路径)
 
     Returns:
         str: 重新加载结果信息
     """
+    if not await detect_superuser(session):
+        return "当前用户没有权限使用此工具"
     sys.path.insert(0, str(local_data.get_cache_dir("llm")))
     try:
         result = await plugin.reload_plugin(plugin_id)

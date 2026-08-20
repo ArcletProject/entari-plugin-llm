@@ -74,14 +74,12 @@ class LLMSessionManager:
             variables.update(result.value)
 
         response = await llm._generate_for_session(
-            [user_message],
-            variables,
-            llm_session=llm_session,
-            model=selected_model,
-            session=session,
-            ctx=ctx
+            [user_message], variables, llm_session=llm_session, model=selected_model, session=session, ctx=ctx
         )
-        final_answer = response.content or ""
+        if response.stopped:
+            final_answer = "[END_OF_RESPONSE]"
+        else:
+            final_answer = response.content or ""
         if not final_answer:
             return "对话失败，请稍后再试"
         return str(final_answer)

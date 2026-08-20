@@ -154,9 +154,7 @@ class AgnoSessionStore:
             elif metrics is not None:
                 total_tokens += int(getattr(metrics, "total_tokens", 0) or 0)
 
-        message_count = sum(
-            1 for message in session.get_chat_history() if message.role in {"user", "assistant"}
-        )
+        message_count = sum(1 for message in session.get_chat_history() if message.role in {"user", "assistant"})
         return SessionInfo(
             session_id=session.session_id,
             user_id=session.user_id or "",

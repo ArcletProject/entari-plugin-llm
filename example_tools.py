@@ -6,7 +6,7 @@ import httpx
 from arclet.entari import Session, command, plugin
 from arclet.letoderea import BLOCK
 
-from entari_plugin_llm import LLMCollectVariableEvent, LLMToolEvent
+from entari_plugin_llm import LLMCollectVariableEvent, LLMToolEvent, register_tool
 
 tools = plugin.dispatch(LLMToolEvent)
 client = httpx.AsyncClient(timeout=30)
@@ -36,7 +36,7 @@ async def ask_user_for_argument(session: Session, prompt: str, timeout: int = 12
     return resp.extract_plain_text()
 
 
-@tools
+@register_tool(stop_after_tool_call=True)
 async def split_answer_send(session: Session, answers: list[str], delays: list[float]):
     """
     将拆分的多段回答发送给用户

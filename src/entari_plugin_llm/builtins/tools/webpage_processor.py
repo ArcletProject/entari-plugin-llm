@@ -1,8 +1,7 @@
-from arclet.entari import plugin
 from launart import Launart
 
+from entari_plugin_llm import register_tool
 from entari_plugin_llm.log import logger
-from entari_plugin_llm.tools import LLMToolEvent
 
 try:
     from entari_plugin_browser import PlaywrightService
@@ -11,9 +10,6 @@ try:
 except ImportError:
     browser_enabled = False
     logger.error("未安装 entari_plugin_browser 插件，无法使用网页处理工具")
-
-
-tools = plugin.dispatch(LLMToolEvent)
 
 
 async def process_web_page(url: str) -> str | None:
@@ -47,4 +43,4 @@ async def process_web_page(url: str) -> str | None:
 
 
 if browser_enabled:
-    tools.register(process_web_page)
+    register_tool(process_web_page)

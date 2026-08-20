@@ -8,16 +8,17 @@ TOutput = TypeVar("TOutput")
 
 
 class GenericResponse(Generic[TOutput]):
-
     def __init__(
         self,
         run_output: RunOutput | None = None,
         stream: AsyncIterator[Any] | None = None,
         structured: bool = False,
+        stopped: bool = False,
     ) -> None:
         self._run_output = run_output
         self._stream = stream
         self._structured = structured
+        self.stopped = stopped
 
     @property
     def content(self) -> str | TOutput | None:
@@ -75,12 +76,15 @@ class GenericResponse(Generic[TOutput]):
         run_output: RunOutput,
         *,
         structured: bool = False,
+        stopped: bool = False,
     ) -> "GenericResponse[TOutput]":
-        return cls(run_output=run_output, structured=structured)
+        return cls(run_output=run_output, structured=structured, stopped=stopped)
 
     @classmethod
     def from_stream(
         cls,
         stream: AsyncIterator[Any],
+        *,
+        stopped: bool = False,
     ) -> "GenericResponse[Any]":
-        return cls(stream=stream)
+        return cls(stream=stream, stopped=stopped)
