@@ -51,6 +51,16 @@ from entari_plugin_llm import llm
 resp = await llm.generate("Hello world")
 ```
 
+### 加速启动
+
+`litellm` 导入时会尝试通过网络加载一遍 `model_cost_map`，导致几秒钟的延迟。若你希望在启动时跳过这一步，可以在导入前设置环境变量：
+
+```dotenv
+LITELLM_LOCAL_MODEL_COST_MAP=true
+```
+
+来跳过网络加载，直接使用本地的 `model_cost_map.json`。
+
 ### 工具与函数调用（Tool）
 - 插件将符合 arclet.letoderea 订阅器规范的函数自动注册为可被 LLM 调用的工具。
 - 工具的参数与文档由函数的 docstring 与类型注解自动生成 JSON Schema，以便 LLM 在函数调用时进行参数填充。
