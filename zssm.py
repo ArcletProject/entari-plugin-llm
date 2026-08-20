@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from arclet.entari import Image, MessageChain, Session, command
 from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import Contexts
@@ -90,7 +92,7 @@ class Output(BaseModel):
 @command.command("zssm [...content]", "知识速释")
 async def zssm(content: command.Match[MessageChain], ctx: Contexts, session: Session):
     user_prompt = ""
-    img_chain: MessageChain[Image] = MessageChain([])
+    img_chain = MessageChain[Image]()
 
     if reply := ctx.get(ITEM_MESSAGE_REPLY):
         user_prompt += f"<type: text>{reply.origin.content}</type: text>"
@@ -102,13 +104,13 @@ async def zssm(content: command.Match[MessageChain], ctx: Contexts, session: Ses
         await session.send("请回复或输入内容", reply_to=True)
 
     if reply and MessageChain(reply.origin.message).has(Image):
-        img_chain.extend(MessageChain(reply.origin.message).include(Image))
+        img_chain.extend(MessageChain(reply.origin.message).select(Image))
 
     if content.available and content.result.has(Image):
-        img_chain.extend(content.result.get(Image))
+        img_chain.extend(content.result.select(Image))
 
-    img = img_chain.map(lambda x: x.src)
-    for url in img[:2]:
+    extractor: Callable[[Image], str] = lambda x: x.src
+    for url in img_chain.map(extractor)[:2]:
         img_content = await llm.vision(url)
         user_prompt += f"<type: image, id: {hash(url)}>{img_content}\n</type: image>"
 

@@ -15,10 +15,10 @@ async def image_vision(session: Session, index: int = 0) -> str | None:
     Returns:
         图片内容的描述。为空表示工具执行已暂停
     """
-    img_chain: MessageChain[Image] = MessageChain([])
+    img_chain = MessageChain[Image]()
 
     if reply := session.reply:
-        img_chain.extend(MessageChain(reply.origin.message).include(Image))
+        img_chain.extend(MessageChain(reply.origin.message).select(Image))
 
     if session._content and session.elements.has(Image):
         img_chain.extend(session.elements.get(Image))
