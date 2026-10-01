@@ -16,14 +16,14 @@ from agno.exceptions import AgentRunException
 from agno.run.agent import RunOutput
 from agno.run.requirement import RunRequirement
 from agno.tools import Function
-from agno.tools.function import (
+from agno.tools.function import _warn_hidden_media
+from agno.utils.json_schema import get_json_schema
+from agno.utils.schema import (
     AGNO_INJECTED_PARAMS,
     FRAMEWORK_INJECTED_PARAMS,
-    _is_bare_media_typed,
-    _is_schema_excluded,
-    _warn_hidden_media,
+    is_bare_media_typed,
+    is_schema_excluded,
 )
-from agno.utils.json_schema import get_json_schema
 from arclet.entari import Session, plugin
 from arclet.letoderea import Propagator, Subscriber
 from arclet.letoderea.context import Contexts, generate_contexts
@@ -66,10 +66,10 @@ def process_jsonschema(name: str, params: list[CompileParam], param_docs: list[D
     # even if the parameter name differs (e.g. my_agent: Agent). See issue #6344.
     try:
         for param_name, hint in list(type_hints.items()):
-            if _is_schema_excluded(hint):
+            if is_schema_excluded(hint):
                 del type_hints[param_name]
                 excluded_params.append(param_name)
-                if _is_bare_media_typed(hint):
+                if is_bare_media_typed(hint):
                     _warn_hidden_media(name, param_name)
     except Exception:
         pass
