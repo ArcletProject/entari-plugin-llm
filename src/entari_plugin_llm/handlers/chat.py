@@ -11,6 +11,7 @@ from entari_plugin_user import UserSession  # entari: plugin
 from ..config import Config, _conf
 from ..exception import ModelNotFoundError
 from ..manager import LLMSessionManager
+from ..tools import load_agno_tools
 
 RECORD = deque(maxlen=16)
 
@@ -62,3 +63,4 @@ async def reload_config(event: ConfigReload):
     _conf.models = new_conf.models
     _conf.prompt = new_conf.prompt
     _conf.tools = new_conf.tools
+    load_agno_tools(_conf.tools)

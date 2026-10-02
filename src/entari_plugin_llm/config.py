@@ -54,9 +54,10 @@ class Config(BasicConfModel, extra="allow"):
                 new_key = key[1:]
                 tool_config["$optional"] = True
 
-            if key.startswith("::"):
+            if new_key.startswith("::agno."):
+                new_key = new_key[2:]
+            elif new_key.startswith("::"):
                 new_key = new_key.replace("::", "entari_plugin_llm.builtins.tools.")
-
             if tool_config.get("$disable"):
                 continue
 

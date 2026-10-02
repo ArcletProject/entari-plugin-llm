@@ -7,6 +7,7 @@ handles DI and lifecycle.
 """
 
 import asyncio
+import importlib
 import inspect
 import json
 from collections.abc import Awaitable, Callable
@@ -15,7 +16,7 @@ from typing import Any, overload
 from agno.exceptions import AgentRunException
 from agno.run.agent import RunOutput
 from agno.run.requirement import RunRequirement
-from agno.tools import Function
+from agno.tools import Function, Toolkit
 from agno.tools.function import _warn_hidden_media
 from agno.utils.json_schema import get_json_schema
 from agno.utils.schema import (
@@ -38,6 +39,36 @@ from .log import logger
 from .sessions import SessionInfo
 
 available_functions: dict[str, tuple[Subscriber[JSON_TYPE], Function]] = {}
+
+
+available_toolkits: dict[str, Toolkit] = {}
+
+
+def _create_agno_tool(path: str, config: dict[str, Any]) -> Toolkit:
+    module_path, _, class_name = path.rpartition(".")
+    if not module_path or not class_name:
+        raise ImportError(f"Invalid Agno tool path: {path}")
+
+    tool_type = getattr(importlib.import_module(module_path), class_name, None)
+    if not isinstance(tool_type, type) or not issubclass(tool_type, Toolkit):
+        raise TypeError(f"{path} is not an Agno Toolkit")
+
+    tool_config = {key: value for key, value in config.items() if not key.startswith("$")}
+    return tool_type(**tool_config)
+
+
+def load_agno_tools(configured_tools: dict[str, dict[str, Any]]) -> None:
+    loaded_tools: dict[str, Toolkit] = {}
+    for path, config in configured_tools.items():
+        if not path.startswith("agno."):
+            continue
+        try:
+            loaded_tools[path] = _create_agno_tool(path, config)
+        except ImportError as e:
+            logger.warning(f"Agno tool {path} is unavailable: {e}")
+
+    available_toolkits.clear()
+    available_toolkits.update(loaded_tools)
 
 
 def process_jsonschema(name: str, params: list[CompileParam], param_docs: list[DocstringParam]):
@@ -204,7 +235,7 @@ def _register_tool(_, sub: Subscriber):
 
 
 def get_agno_tools():
-    return [fn for _, fn in available_functions.values()]
+    return [*available_toolkits.values(), *(fn for _, fn in available_functions.values())]
 
 
 async def run_llm_tools(

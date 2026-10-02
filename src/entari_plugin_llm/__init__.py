@@ -5,6 +5,7 @@ from .config import Config, _conf
 from .event import LLMCollectVariableEvent as LLMCollectVariableEvent
 from .event import LLMToolEvent as LLMToolEvent
 from .log import _suppress_litellm_logging
+from .tools import load_agno_tools
 from .tools import register as register_tool
 
 metadata(
@@ -26,7 +27,9 @@ declare_static()
 _suppress_litellm_logging()
 
 for tool in _conf.tools:
-    plugin.load_plugin(tool)
+    if not tool.startswith("agno."):
+        plugin.load_plugin(tool)
+load_agno_tools(_conf.tools)
 
 from .handlers import chat as chat
 from .handlers import check as check
