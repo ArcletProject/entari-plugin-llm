@@ -100,19 +100,19 @@ def set_default_model(model_name: str | None, channel: str = "$default") -> None
     _write_state(state, channel)
 
 
-def get_current_session(user_id: str) -> SessionPointer | None:
-    return _read_state("$default").current_sessions.get(user_id)
+def get_current_session(user_id: int) -> SessionPointer | None:
+    return _read_state("$default").current_sessions.get(str(user_id))
 
 
-def set_current_session(user_id: str, session_id: str, created_at: int) -> None:
+def set_current_session(user_id: int, session_id: str, created_at: int) -> None:
     state = _read_state("$default")
-    state.current_sessions[user_id] = SessionPointer(session_id, created_at)
+    state.current_sessions[str(user_id)] = SessionPointer(session_id, created_at)
     _write_state(state, "$default")
 
 
-def clear_current_session(user_id: str) -> None:
+def clear_current_session(user_id: int) -> None:
     state = _read_state("$default")
-    if state.current_sessions.pop(user_id, None) is not None:
+    if state.current_sessions.pop(str(user_id), None) is not None:
         _write_state(state, "$default")
 
 

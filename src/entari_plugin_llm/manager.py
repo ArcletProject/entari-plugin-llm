@@ -3,8 +3,9 @@ from typing import Any
 
 import litellm
 from agno.models.message import Message
-from arclet.entari import Image, MessageChain, Session, Text
+from arclet.entari import Image, MessageChain, Text
 from arclet.letoderea import Contexts, waterfall
+from entari_plugin_user import UserSession  # entari: plugin
 
 from .config import get_model_config
 from .event import LLMCollectVariableEvent
@@ -14,29 +15,29 @@ from .sessions import SessionInfo
 
 class LLMSessionManager:
     @classmethod
-    async def create_new_session(cls, user_id: str, model: str | None = None) -> SessionInfo:
+    async def create_new_session(cls, user_id: int, model: str | None = None) -> SessionInfo:
         selected_model = model or get_model_config().name
         return await llm.session_store.create(user_id, selected_model)
 
     @classmethod
-    async def switch(cls, user_id: str, session_id: str) -> bool:
+    async def switch(cls, user_id: int, session_id: str) -> bool:
         return await llm.session_store.activate(user_id, session_id)
 
     @classmethod
-    async def delete(cls, user_id: str, session_id: str) -> bool:
+    async def delete(cls, user_id: int, session_id: str) -> bool:
         return await llm.session_store.delete(user_id, session_id)
 
     @classmethod
-    async def get_current_session_info(cls, user_id: str) -> dict[str, Any] | None:
+    async def get_current_session_info(cls, user_id: int) -> dict[str, Any] | None:
         session = await llm.session_store.current(user_id)
         return asdict(session) if session is not None else None
 
     @classmethod
-    async def select_model(cls, user_id: str, model: str) -> bool:
+    async def select_model(cls, user_id: int, model: str) -> bool:
         return await llm.session_store.set_model(user_id, model)
 
     @classmethod
-    async def list_sessions(cls, user_id: str) -> list[SessionInfo]:
+    async def list_sessions(cls, user_id: int) -> list[SessionInfo]:
         return await llm.session_store.list(user_id)
 
     @classmethod
@@ -44,12 +45,12 @@ class LLMSessionManager:
         cls,
         user_prompt: MessageChain,
         *,
-        session: Session,
+        session: UserSession,
         ctx: Contexts,
         model: str | None = None,
         new: bool = False,
     ) -> str:
-        user_id = f"{session.account.platform}:{session.user.id}"
+        user_id = session.user_id
         llm_session = None if new else await llm.session_store.current(user_id)
         if llm_session is None:
             selected_model = model or get_model_config(None, session.channel.id).name
@@ -65,16 +66,16 @@ class LLMSessionManager:
         user_message = Message(
             role="user",
             content=content,
-            name=f"{session.user.name}({session.user.id})",
+            name=f"{session.user_name}({session.user_id})",
         )
 
-        collect_event = LLMCollectVariableEvent(session, llm_session, user_prompt)
+        collect_event = LLMCollectVariableEvent(session.internal, llm_session, user_prompt)
         variables: dict[str, Any] = {}
         async for result in waterfall(collect_event, inherit_ctx=ctx):
             variables.update(result.value)
 
         response = await llm._generate_for_session(
-            [user_message], variables, llm_session=llm_session, model=selected_model, session=session, ctx=ctx
+            [user_message], variables, llm_session=llm_session, model=selected_model, session=session.internal, ctx=ctx
         )
         if response.stopped:
             final_answer = "[END_OF_RESPONSE]"

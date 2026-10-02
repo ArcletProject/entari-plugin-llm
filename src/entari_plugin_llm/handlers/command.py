@@ -1,14 +1,15 @@
 from arclet.alconna import Alconna, Args, MultiVar, Option, Subcommand, store_true
-from arclet.entari import MessageChain, Session, command, metadata
+from arclet.entari import MessageChain, command, metadata
 from arclet.entari.const import ITEM_MESSAGE_REPLY
 from arclet.letoderea import BLOCK, Contexts
+from entari_plugin_user import UserSession  # entari: plugin
 from satori import At
 
 from .._jsondata import set_default_model
 from ..config import get_model_config, get_model_list
 from ..exception import ModelNotFoundError
 from ..manager import LLMSessionManager
-from ..utils import render_model_list, render_session_list, select_session
+from ..utils import render_model_list, render_session_list, resolve_user_id, select_session
 
 metadata(
     name="LLM 指令",
@@ -55,19 +56,17 @@ llm_disp = command.mount(llm_alc, skip_for_unmatch=False)
 
 
 @llm_disp.assign("new_cmd")
-async def _(session: Session, model: command.Query[str] = command.Query("select_model.model")):
+async def _(session: UserSession, model: command.Query[str] = command.Query("select_model.model")):
     conf = get_model_config(model.result if model.available else None, session.channel.id)
     if model.available:
         set_default_model(conf.name, session.channel.id)
-    new_session = await LLMSessionManager.create_new_session(
-        f"{session.account.platform}:{session.user.id}", model=conf.name
-    )
+    new_session = await LLMSessionManager.create_new_session(session.user_id, model=conf.name)
     await session.send(f"以创建并切换到新会话\n会话ID: {new_session.session_id}")
     return BLOCK
 
 
 @llm_disp.assign("switch")
-async def _(session: Session, session_id: command.Match[str]):
+async def _(session: UserSession, session_id: command.Match[str]):
     if not session_id.available:
         selected = await select_session(session)
         if selected is None:
@@ -75,30 +74,28 @@ async def _(session: Session, session_id: command.Match[str]):
 
         session_id.result = selected
 
-    switched = await LLMSessionManager.switch(f"{session.account.platform}:{session.user.id}", session_id.result)
+    switched = await LLMSessionManager.switch(session.user_id, session_id.result)
     await session.send("切换成功" if switched else "未找到对应会话")
     return BLOCK
 
 
 @llm_disp.assign("delete")
-async def _(session: Session, session_id: command.Match[str]):
+async def _(session: UserSession, session_id: command.Match[str]):
     if not session_id.available:
         selected = await select_session(session)
         if selected is None:
             return BLOCK
 
         session_id.result = selected
-    info = await LLMSessionManager.get_current_session_info(f"{session.account.platform}:{session.user.id}")
-    deleted = await LLMSessionManager.delete(f"{session.account.platform}:{session.user.id}", session_id.result)
+    info = await LLMSessionManager.get_current_session_info(session.user_id)
+    deleted = await LLMSessionManager.delete(session.user_id, session_id.result)
     if deleted:
-        rows = await LLMSessionManager.list_sessions(f"{session.account.platform}:{session.user.id}")
+        rows = await LLMSessionManager.list_sessions(session.user_id)
         if not rows:
-            await LLMSessionManager.create_new_session(f"{session.account.platform}:{session.user.id}")
+            await LLMSessionManager.create_new_session(session.user_id)
             await session.send("删除成功，已自动创建新会话")
         elif info and info["session_id"] == session_id.result:
-            switched = await LLMSessionManager.switch(
-                f"{session.account.platform}:{session.user.id}", rows[0].session_id
-            )
+            switched = await LLMSessionManager.switch(session.user_id, rows[0].session_id)
             await session.send("删除成功，已切换到最近的会话" if switched else "删除成功，但未找到对应会话")
         else:
             await session.send("删除成功，当前会话列表：\n" + render_session_list(rows))
@@ -108,15 +105,9 @@ async def _(session: Session, session_id: command.Match[str]):
 
 
 @llm_disp.assign("session.list")
-async def _(session: Session, user_id: command.Match[str | At]):
-    if user_id.available:
-        if isinstance(user_id.result, At):
-            session_id = f"{session.account.platform}:{user_id.result.id}"
-        else:
-            session_id = f"{session.account.platform}:{user_id.result}"
-    else:
-        session_id = f"{session.account.platform}:{session.user.id}"
-    rows = await LLMSessionManager.list_sessions(session_id)
+async def _(session: UserSession, user_id: command.Match[str | At]):
+    target = user_id.result if user_id.available else None
+    rows = await LLMSessionManager.list_sessions(await resolve_user_id(session, target))
 
     if not rows:
         await session.send("暂无会话")
@@ -127,15 +118,9 @@ async def _(session: Session, user_id: command.Match[str | At]):
 
 
 @llm_disp.assign("session", priority=20)
-async def _(session: Session, user_id: command.Match[str | At]):
-    if user_id.available:
-        if isinstance(user_id.result, At):
-            session_id = f"{session.account.platform}:{user_id.result.id}"
-        else:
-            session_id = f"{session.account.platform}:{user_id.result}"
-    else:
-        session_id = f"{session.account.platform}:{session.user.id}"
-    info = await LLMSessionManager.get_current_session_info(session_id)
+async def _(session: UserSession, user_id: command.Match[str | At]):
+    target = user_id.result if user_id.available else None
+    info = await LLMSessionManager.get_current_session_info(await resolve_user_id(session, target))
     if info is None:
         await session.send("当前没有活动会话")
         return BLOCK
@@ -157,18 +142,18 @@ async def _(session: Session, user_id: command.Match[str | At]):
 
 
 @llm_disp.assign("model.list")
-async def _(session: Session):
-    info = await LLMSessionManager.get_current_session_info(f"{session.account.platform}:{session.user.id}")
+async def _(session: UserSession):
+    info = await LLMSessionManager.get_current_session_info(session.user_id)
     current_model = info["model"] if info else None
     await session.send(render_model_list(current_model, session.channel.id))
     return BLOCK
 
 
 @llm_disp.assign("model", priority=20)
-async def _(session: Session, model: command.Match[str]):
+async def _(session: UserSession, model: command.Match[str]):
     if model.available:
         if model.result not in get_model_list():
-            info = await LLMSessionManager.get_current_session_info(f"{session.account.platform}:{session.user.id}")
+            info = await LLMSessionManager.get_current_session_info(session.user_id)
             current_model = info["model"] if info else None
             await session.send(render_model_list(current_model, session.channel.id))
             return BLOCK
@@ -176,12 +161,12 @@ async def _(session: Session, model: command.Match[str]):
         conf = get_model_config(model.result, session.channel.id)
         set_default_model(conf.name, session.channel.id)
 
-        if await LLMSessionManager.select_model(f"{session.account.platform}:{session.user.id}", conf.name):
+        if await LLMSessionManager.select_model(session.user_id, conf.name):
             await session.send(f"已切换当前会话使用的模型为: {model.result}")
         else:
             await session.send(f"已切换默认模型为: {model.result}")
         return BLOCK
-    info = await LLMSessionManager.get_current_session_info(f"{session.account.platform}:{session.user.id}")
+    info = await LLMSessionManager.get_current_session_info(session.user_id)
     current_model = info["model"] if info else None
     await session.send(render_model_list(current_model, session.channel.id))
     return BLOCK
@@ -190,7 +175,7 @@ async def _(session: Session, model: command.Match[str]):
 @llm_disp.handle(priority=25)
 async def main_chat(
     ctx: Contexts,
-    session: Session,
+    session: UserSession,
     content: command.Match[MessageChain],
     new_opt: command.Query[bool] = command.Query("new_opt.value"),
     model: command.Query[str] = command.Query("select_model.model"),

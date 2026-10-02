@@ -1,11 +1,12 @@
 from collections import deque
 
-from arclet.entari import MessageChain, MessageCreatedEvent, Session, filter_, metadata
+from arclet.entari import MessageChain, MessageCreatedEvent, filter_, metadata
 from arclet.entari.config import config_model_validate
 from arclet.entari.event.config import ConfigReload
 from arclet.entari.event.send import SendResponse
 from arclet.letoderea import BLOCK, on
 from arclet.letoderea.context import Contexts
+from entari_plugin_user import UserSession  # entari: plugin
 
 from ..config import Config, _conf
 from ..exception import ModelNotFoundError
@@ -31,9 +32,9 @@ async def _record(event: SendResponse):
 
 
 @on(MessageCreatedEvent, priority=1000, label="AI 对话").if_(filter_.to_me)
-async def run_conversation(session: Session, ctx: Contexts):
+async def run_conversation(session: UserSession, ctx: Contexts):
     """利用 LLM 进行对话"""
-    if session.event.sn in RECORD:
+    if session.internal.event.sn in RECORD:
         return BLOCK
 
     try:

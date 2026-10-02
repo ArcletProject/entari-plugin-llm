@@ -196,7 +196,7 @@ class LLMService(Service):
             if self._db is not None:
                 agent_kwargs["db"] = self._db
             agent_kwargs["session_id"] = llm_session.session_id
-            agent_kwargs["user_id"] = llm_session.user_id
+            agent_kwargs["user_id"] = str(llm_session.user_id)
             agent_kwargs["add_history_to_context"] = True
             agent_kwargs["enable_session_summaries"] = True
             agent_kwargs["add_session_summary_to_context"] = False

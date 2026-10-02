@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
-from arclet.entari import Session
+from entari_plugin_user import UserSession, get_user  # entari: plugin
+from satori import At
 
 from ._jsondata import get_default_model
 from .config import _conf
@@ -45,8 +46,18 @@ def render_model_list(current_model: str | None = None, channel: str = "$default
     return "\n".join(lines)
 
 
-async def select_session(session: Session) -> str | None:
-    rows = await LLMSessionManager.list_sessions(f"{session.account.platform}:{session.user.id}")
+async def resolve_user_id(session: UserSession, target: str | At | None = None) -> int:
+    if target is None:
+        return session.user_id
+    platform_id = target.id if isinstance(target, At) else target
+    if platform_id == session.platform_id:
+        return session.user_id
+    user = await get_user(session.platform, await session.user_get(platform_id))
+    return user.id
+
+
+async def select_session(session: UserSession) -> str | None:
+    rows = await LLMSessionManager.list_sessions(session.user_id)
     if not rows:
         await session.send("暂无会话")
         return None

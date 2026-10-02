@@ -7,7 +7,7 @@ entari-plugin-llm 是一个用于 Entari 框架的 LLM（大语言模型）插�
 主要特性
 - 基于 litellm 的聊天能力（支持流式与非流式）。
 - 支持“函数调用”机制（Tool Call），可以把插件内的订阅函数自动注册为 LLM 可调用的工具。
-- 会话与上下文持久化（使用 `entari-plugin-database` 提供的数据库模型）。
+- 会话与上下文持久化（使用 Agno 的 SQLite 会话存储）。
 - 支持视觉（image）输入的模型调用（当模型支持 vision 时）。
 - 可配置的模型/提示/工具调用策略，通过 `Config` 加载与热重载（ConfigReload）。
 
