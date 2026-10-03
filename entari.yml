@@ -16,6 +16,8 @@ basic:
       - aiosqlite.core
       - markdown_it.*
       - hpack.*
+      - openai._base_client
+      - urllib3.connectionpool
   prefix:
     - /
   schema: true
@@ -66,6 +68,18 @@ plugins:
     tools:
       ::generic: {}
       ::plugin_manager: {}
+      ::agno.tools.exa.ExaTools:
+        $call_limit: 2
+        # https://docs.agno.com/tools/toolkits/search/exa
+        api_key: ${{ env.EXA_API_KEY }}
+        enable_search: true
+        enable_get_contents: true
+        enable_find_similar: true
+        enable_answer: true
+        enable_research: false
+        text: true
+        text_length_limit: 1000
+
     prompt: |
       1. 你是一个由用户提供信息并回答问题的智能助手。请根据用户提供的信息，尽可能准确和简洁地回答他们的问题。
       2. 如果信息不足以回答问题，请礼貌地告知用户需要更多信息。

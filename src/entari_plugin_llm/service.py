@@ -161,6 +161,8 @@ class LLMService(Service):
             raise ValueError("output is not supported when stream=True")
 
         model_config = get_model_config(model)
+        tools, executors = get_agno_tools()
+
         if system is not None:
             instructions = system
         elif ignore_user_prompt:
@@ -186,7 +188,7 @@ class LLMService(Service):
             "id": self.id,
             "model": agno_model,
             "instructions": instructions,
-            "tools": get_agno_tools(),
+            "tools": tools,
             "markdown": False,
         }
         if output is not None:
@@ -208,7 +210,7 @@ class LLMService(Service):
         response = await agent.arun(message)
         stopped = False
         while response.is_paused:
-            should_continue = await run_llm_tools(response, llm_session, session, ctx)
+            should_continue = await run_llm_tools(response, executors, llm_session, session, ctx)
             if not should_continue:
                 stopped = True
                 break

@@ -61,6 +61,10 @@ class Config(BasicConfModel, extra="allow"):
             if tool_config.get("$disable"):
                 continue
 
+            call_limit = tool_config.get("$call_limit")
+            if call_limit is not None and (type(call_limit) is not int or call_limit < 0):
+                raise ValueError(f"{new_key}: $call_limit must be a positive integer")
+
             loaded_tools[new_key] = tool_config
 
         self.tools = loaded_tools

@@ -10,7 +10,9 @@ import asyncio
 import importlib
 import inspect
 import json
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
+from dataclasses import dataclass
+from threading import Lock
 from typing import Any, overload
 
 from agno.exceptions import AgentRunException
@@ -26,6 +28,7 @@ from agno.utils.schema import (
     is_schema_excluded,
 )
 from arclet.entari import Session, plugin
+from arclet.entari.plugin.model import current_plugin
 from arclet.letoderea import Propagator, Subscriber
 from arclet.letoderea.context import Contexts, generate_contexts
 from arclet.letoderea.exceptions import ExitState, _ExitException
@@ -34,41 +37,89 @@ from arclet.letoderea.subscriber import CompileParam
 from docstring_parser import DocstringParam, parse
 from tarina import Empty
 
+from .config import _conf
 from .event import JSON_TYPE, LLMToolEvent, tools_pub
 from .log import logger
 from .sessions import SessionInfo
 
-available_functions: dict[str, tuple[Subscriber[JSON_TYPE], Function]] = {}
+
+@dataclass(frozen=True)
+class RegisteredTool:
+    subscriber: Subscriber[JSON_TYPE]
+    function: Function
+    plugin_id: str
 
 
-available_toolkits: dict[str, Toolkit] = {}
+available_functions: dict[str, RegisteredTool] = {}
+agno_tool_types: dict[str, type[Toolkit]] = {}
 
 
-def _create_agno_tool(path: str, config: dict[str, Any]) -> Toolkit:
-    module_path, _, class_name = path.rpartition(".")
-    if not module_path or not class_name:
-        raise ImportError(f"Invalid Agno tool path: {path}")
+def make_call_guard(path: str, call_limit: int | None) -> Callable[[], None] | None:
+    if call_limit is None:
+        return None
+    count = 0
+    lock = Lock()
 
-    tool_type = getattr(importlib.import_module(module_path), class_name, None)
-    if not isinstance(tool_type, type) or not issubclass(tool_type, Toolkit):
-        raise TypeError(f"{path} is not an Agno Toolkit")
+    def guard():
+        nonlocal count
+        with lock:
+            if count >= call_limit:
+                raise AgentRunException(f"Tool {path} reached its call limit ({call_limit}); use the existing results")
+            count += 1
 
-    tool_config = {key: value for key, value in config.items() if not key.startswith("$")}
-    return tool_type(**tool_config)
+    return guard
+
+
+def prepare_agno_functions(functions: Iterable[Function], guard: Callable[[], None] | None) -> None:
+    def before_call(fc):
+        if guard is not None:
+            guard()
+        logger.debug(f"Calling tool: {fc.function.name} with args: {fc.arguments or {}}")
+
+    def wrap(previous):
+        if previous is None:
+            return before_call
+        parameters = inspect.signature(previous).parameters
+
+        def arguments(agent, team, run_context, fc):
+            values = {"agent": agent, "team": team, "run_context": run_context, "fc": fc}
+            return {key: value for key, value in values.items() if key in parameters}
+
+        if inspect.iscoroutinefunction(previous):
+
+            async def async_hook(agent=None, team=None, run_context=None, fc=None):
+                before_call(fc)
+                return await previous(**arguments(agent, team, run_context, fc))
+
+            return async_hook
+
+        def sync_hook(agent=None, team=None, run_context=None, fc=None):
+            before_call(fc)
+            return previous(**arguments(agent, team, run_context, fc))
+
+        return sync_hook
+
+    for function in functions:
+        function.pre_hook = wrap(function.pre_hook)
 
 
 def load_agno_tools(configured_tools: dict[str, dict[str, Any]]) -> None:
-    loaded_tools: dict[str, Toolkit] = {}
-    for path, config in configured_tools.items():
+    tool_types: dict[str, type[Toolkit]] = {}
+    for path in configured_tools:
         if not path.startswith("agno."):
             continue
+        module_path, _, class_name = path.rpartition(".")
         try:
-            loaded_tools[path] = _create_agno_tool(path, config)
+            tool_type = getattr(importlib.import_module(module_path), class_name, None)
         except ImportError as e:
             logger.warning(f"Agno tool {path} is unavailable: {e}")
-
-    available_toolkits.clear()
-    available_toolkits.update(loaded_tools)
+            continue
+        if not isinstance(tool_type, type) or not issubclass(tool_type, Toolkit):
+            raise TypeError(f"{path} is not an Agno Toolkit")
+        tool_types[path] = tool_type
+        logger.debug(f"Registered tool: {path}")
+    agno_tool_types.clear()
+    agno_tool_types.update(tool_types)
 
 
 def process_jsonschema(name: str, params: list[CompileParam], param_docs: list[DocstringParam]):
@@ -148,7 +199,13 @@ class _ToolPropagator(Propagator):
         parameters = process_jsonschema(
             subscriber.__name__, [p for p in subscriber.params if not p.providers], parsed.params
         )
-        subscriber._attach_disposes(lambda s: available_functions.pop(s.__name__, None))  # type: ignore
+
+        def dispose_tool(sub: Subscriber):
+            current = available_functions.get(sub.__name__)
+            if current is not None and current.subscriber is sub:
+                available_functions.pop(sub.__name__)
+
+        subscriber._attach_disposes(dispose_tool)
         tool_config = {
             "name": self.tool_config.get("name", subscriber.__name__),
             "description": self.tool_config.get("description", entry_docs),
@@ -182,7 +239,9 @@ class _ToolPropagator(Propagator):
             if "show_result" not in self.tool_config or self.tool_config.get("show_result") is None:
                 tool_config["show_result"] = True
         function = Function(**tool_config)
-        available_functions[subscriber.__name__] = (subscriber, function)  # type: ignore
+        plg = current_plugin.get(None)
+        plugin_id = plg.id if plg else subscriber.callable_target.__module__
+        available_functions[subscriber.__name__] = RegisteredTool(subscriber, function, plugin_id)  # type: ignore
         logger.debug(f"Registered tool: {subscriber.__name__}")
         return False
 
@@ -234,12 +293,49 @@ def _register_tool(_, sub: Subscriber):
     return True
 
 
-def get_agno_tools():
-    return [*available_toolkits.values(), *(fn for _, fn in available_functions.values())]
+def get_agno_tools() -> tuple[list[Toolkit | Function], dict[str, tuple[Callable, Function]]]:
+    tools: list[Toolkit | Function] = []
+    for path, toolkit_type in agno_tool_types.items():
+        config = _conf.tools[path]
+        options = {key: value for key, value in config.items() if not key.startswith("$")}
+
+        try:
+            toolkit = toolkit_type(**options)
+        except ImportError as e:
+            logger.warning(f"Agno tool {path} is unavailable: {e}")
+            continue
+
+        functions = {id(fn): fn for fn in (*toolkit.functions.values(), *toolkit.async_functions.values())}.values()
+        guard = make_call_guard(path, config.get("$call_limit"))
+
+        prepare_agno_functions(functions, guard)
+        tools.append(toolkit)
+
+    guards = {}
+    for path, config in _conf.tools.items():
+        if not path.startswith(("$", "agno.")):
+            plg = plugin.find_plugin(path)
+            guards[plg.id if plg else path] = make_call_guard(path, config.get("$call_limit"))
+
+    executors: dict[str, tuple[Callable, Function]] = {}
+    for name, registered in available_functions.items():
+        fn = registered.function.model_copy()
+        guard = guards.get(registered.plugin_id)
+
+        async def execute(context, tool_args, sub=registered.subscriber, check=guard):
+            if check is not None:
+                check()
+            logger.debug(f"Calling tool: {sub.__name__} with args: {tool_args}")
+            return await sub.handle(context, inner=True)
+
+        executors[name] = (execute, fn)
+        tools.append(fn)
+    return tools, executors
 
 
 async def run_llm_tools(
     response: RunOutput,
+    executors: dict[str, tuple[Callable, Function]],
     llm_session: SessionInfo | None = None,
     session: Session | None = None,
     ctx: Contexts | None = None,
@@ -254,15 +350,14 @@ async def run_llm_tools(
             req.set_external_execution_result("No tool execution found")
             return
         tool_name = execution.tool_name
-        if not tool_name or tool_name not in available_functions:
+        if not tool_name or tool_name not in executors:
             req.set_external_execution_result(f"Tool {tool_name} not found")
             return
         tool_args = execution.tool_args or {}
         context.update(tool_args)
-        sub, fn = available_functions[tool_name]
-        logger.debug(f"Agno bridge calling tool: {tool_name} with args: {tool_args}")
+        execute, fn = executors[tool_name]
         try:
-            result = await sub.handle(context, inner=True)
+            result = await execute(context, tool_args)
             if isinstance(result, ExitState):
                 if result is ExitState.stop:
                     ans = json.dumps({"ok": True, "data": "已结束对话"}, ensure_ascii=False)
