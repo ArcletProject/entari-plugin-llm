@@ -28,7 +28,7 @@ from agno.utils.schema import (
     is_schema_excluded,
 )
 from arclet.entari import Session, plugin
-from arclet.entari.plugin.model import current_plugin
+from arclet.entari.plugin.model import Plugin, current_plugin
 from arclet.letoderea import Propagator, Subscriber
 from arclet.letoderea.context import Contexts, generate_contexts
 from arclet.letoderea.exceptions import ExitState, _ExitException
@@ -48,6 +48,7 @@ class RegisteredTool:
     subscriber: Subscriber[JSON_TYPE]
     function: Function
     plugin_id: str
+    owner: Plugin | None
 
 
 available_functions: dict[str, RegisteredTool] = {}
@@ -209,12 +210,6 @@ class _ToolPropagator(Propagator):
             subscriber.__name__, [p for p in subscriber.params if not p.providers], parsed.params
         )
 
-        def dispose_tool(sub: Subscriber):
-            current = available_functions.get(sub.__name__)
-            if current is not None and current.subscriber is sub:
-                available_functions.pop(sub.__name__)
-
-        subscriber._attach_disposes(dispose_tool)
         tool_config = {
             "name": self.tool_config.get("name", subscriber.__name__),
             "description": self.tool_config.get("description", entry_docs),
@@ -247,11 +242,37 @@ class _ToolPropagator(Propagator):
         if self.tool_config.get("stop_after_tool_call"):
             if "show_result" not in self.tool_config or self.tool_config.get("show_result") is None:
                 tool_config["show_result"] = True
+
         function = Function(**tool_config)
         plg = current_plugin.get(None)
         plugin_id = plg.id if plg else subscriber.callable_target.__module__
-        available_functions[subscriber.__name__] = RegisteredTool(subscriber, function, plugin_id)  # type: ignore
-        logger.debug(f"Registered tool: {subscriber.__name__}")
+
+        # Check for tool naming conflicts
+        for registered in available_functions.values():
+            if registered.function.name != function.name:
+                continue
+            if registered.owner is not None and not registered.owner.available:
+                continue
+            if (
+                plg is not None
+                and registered.owner is not None
+                and registered.owner is not plg
+                and registered.plugin_id == plugin_id
+                and not plg.is_available
+                and registered.owner.is_available
+            ):
+                continue
+            raise ValueError(
+                f"Tool name {function.name!r} is already registered by {registered.plugin_id}; "
+                f"cannot register {plugin_id}"
+            )
+
+        def dispose_tool(sub: Subscriber):
+            available_functions.pop(sub.id, None)
+
+        subscriber._attach_disposes(dispose_tool)
+        available_functions[subscriber.id] = RegisteredTool(subscriber, function, plugin_id, plg)  # type: ignore
+        logger.debug(f"Registered tool: {function.name}")
         return False
 
     def compose(self):
@@ -297,13 +318,14 @@ def register(*args, **kwargs):
 
 @tools_pub.check
 def _register_tool(_, sub: Subscriber):
-    if sub.__name__ not in available_functions:
+    if sub.id not in available_functions:
         _ToolPropagator({"external_execution": True}).validate(sub)
     return True
 
 
 def get_agno_tools() -> tuple[list[Toolkit | Function], dict[str, tuple[Callable, Function]]]:
     tools: list[Toolkit | Function] = []
+    tool_owners: dict[str, str] = {}
     for path, toolkit_type in agno_tool_types.items():
         config = _conf.tools[path]
         options = {key: value for key, value in config.items() if not key.startswith("$")}
@@ -313,6 +335,12 @@ def get_agno_tools() -> tuple[list[Toolkit | Function], dict[str, tuple[Callable
         except ImportError as e:
             logger.warning(f"Agno tool {path} is unavailable: {e}")
             continue
+        for function in toolkit.get_async_functions().values():
+            if function.name in tool_owners:
+                raise ValueError(
+                    f"Tool name {function.name!r} conflicts between {tool_owners[function.name]} and {path}"
+                )
+            tool_owners[function.name] = path
 
         functions = {id(fn): fn for fn in (*toolkit.functions.values(), *toolkit.async_functions.values())}.values()
         guard = make_call_guard(path, config.get("$call_limit"))
@@ -327,17 +355,25 @@ def get_agno_tools() -> tuple[list[Toolkit | Function], dict[str, tuple[Callable
             guards[plg.id if plg else path] = make_call_guard(path, config.get("$call_limit"))
 
     executors: dict[str, tuple[Callable, Function]] = {}
-    for name, registered in available_functions.items():
+    for registered in available_functions.values():
+        if registered.owner is not None and not registered.owner.is_available:
+            continue
         # A removed tool configuration must not unload a plugin used elsewhere.
         if registered.plugin_id in _configured_tool_plugins and registered.plugin_id not in guards:
             continue
+
+        name = registered.function.name
+        if name in tool_owners:
+            raise ValueError(f"Tool name {name!r} conflicts between {tool_owners[name]} and {registered.plugin_id}")
+
+        tool_owners[name] = registered.plugin_id
         fn = registered.function.model_copy()
         guard = guards.get(registered.plugin_id)
 
-        async def execute(context, tool_args, sub=registered.subscriber, check=guard):
+        async def execute(context, tool_args, sub=registered.subscriber, check=guard, tool_name=name):
             if check is not None:
                 check()
-            logger.debug(f"Calling tool: {sub.__name__} with args: {tool_args}")
+            logger.debug(f"Calling tool: {tool_name} with args: {tool_args}")
             return await sub.handle(context, inner=True)
 
         executors[name] = (execute, fn)
