@@ -1,11 +1,11 @@
-from arclet.entari import declare_static, metadata, plugin
+from arclet.entari import declare_static, metadata
 from arclet.entari.plugin import PluginRole
 
 from .config import Config, _conf
 from .event import LLMCollectVariableEvent as LLMCollectVariableEvent
 from .event import LLMToolEvent as LLMToolEvent
 from .log import _suppress_litellm_logging
-from .tools import load_agno_tools
+from .tools import load_tools
 from .tools import register as register_tool
 
 metadata(
@@ -26,16 +26,14 @@ metadata(
 declare_static()
 _suppress_litellm_logging()
 
-for tool in _conf.tools:
-    if not tool.startswith("agno."):
-        plugin.load_plugin(tool)
-load_agno_tools(_conf.tools)
+from .response import GenericResponse as GenericResponse
+from .service import llm as llm
+
+load_tools(_conf.tools)
 
 from .handlers import chat as chat
 from .handlers import check as check
 from .handlers import command as command
-from .response import GenericResponse as GenericResponse
-from .service import llm as llm
 
 __all__ = [
     "llm",

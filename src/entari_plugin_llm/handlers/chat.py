@@ -1,7 +1,7 @@
 from collections import deque
 
 from arclet.entari import MessageChain, MessageCreatedEvent, filter_, metadata
-from arclet.entari.config import config_model_validate
+from arclet.entari.config import config_model_keys, config_model_validate
 from arclet.entari.event.config import ConfigReload
 from arclet.entari.event.send import SendResponse
 from arclet.letoderea import BLOCK, on
@@ -11,7 +11,8 @@ from entari_plugin_user import UserSession  # entari: plugin
 from ..config import Config, _conf
 from ..exception import ModelNotFoundError
 from ..manager import LLMSessionManager
-from ..tools import load_agno_tools
+from ..tools import load_tools
+from .check import check_config
 
 RECORD = deque(maxlen=16)
 
@@ -59,8 +60,11 @@ async def reload_config(event: ConfigReload):
         return
     if event.key not in ("entari_plugin_llm", "llm"):
         return
+
     new_conf = config_model_validate(Config, event.value)
-    _conf.models = new_conf.models
-    _conf.prompt = new_conf.prompt
-    _conf.tools = new_conf.tools
-    load_agno_tools(_conf.tools)
+    load_tools(new_conf.tools)
+    for key in config_model_keys(new_conf):
+        setattr(_conf, key, getattr(new_conf, key))
+
+    await check_config()
+    return True

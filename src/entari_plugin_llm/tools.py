@@ -52,6 +52,7 @@ class RegisteredTool:
 
 available_functions: dict[str, RegisteredTool] = {}
 agno_tool_types: dict[str, type[Toolkit]] = {}
+_configured_tool_plugins: set[str] = set()
 
 
 def make_call_guard(path: str, call_limit: int | None) -> Callable[[], None] | None:
@@ -103,21 +104,29 @@ def prepare_agno_functions(functions: Iterable[Function], guard: Callable[[], No
         function.pre_hook = wrap(function.pre_hook)
 
 
-def load_agno_tools(configured_tools: dict[str, dict[str, Any]]) -> None:
+def load_tools(configured_tools: dict[str, dict[str, Any]]) -> None:
     tool_types: dict[str, type[Toolkit]] = {}
     for path in configured_tools:
-        if not path.startswith("agno."):
+        if path.startswith("$"):
             continue
+        if not path.startswith("agno."):
+            if plg := plugin.load_plugin(path):
+                _configured_tool_plugins.add(plg.id)
+            continue
+
         module_path, _, class_name = path.rpartition(".")
         try:
             tool_type = getattr(importlib.import_module(module_path), class_name, None)
         except ImportError as e:
             logger.warning(f"Agno tool {path} is unavailable: {e}")
             continue
+
         if not isinstance(tool_type, type) or not issubclass(tool_type, Toolkit):
             raise TypeError(f"{path} is not an Agno Toolkit")
+
         tool_types[path] = tool_type
         logger.debug(f"Registered tool: {path}")
+
     agno_tool_types.clear()
     agno_tool_types.update(tool_types)
 
@@ -319,6 +328,9 @@ def get_agno_tools() -> tuple[list[Toolkit | Function], dict[str, tuple[Callable
 
     executors: dict[str, tuple[Callable, Function]] = {}
     for name, registered in available_functions.items():
+        # A removed tool configuration must not unload a plugin used elsewhere.
+        if registered.plugin_id in _configured_tool_plugins and registered.plugin_id not in guards:
+            continue
         fn = registered.function.model_copy()
         guard = guards.get(registered.plugin_id)
 
