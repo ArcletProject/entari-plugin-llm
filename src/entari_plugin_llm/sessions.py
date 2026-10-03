@@ -17,6 +17,7 @@ from ._jsondata import (
     set_current_session,
     set_session_model,
 )
+from .exception import NewSessionExistsError
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +41,10 @@ class AgnoSessionStore:
         self.agent_id = agent_id
 
     async def create(self, user_id: int, model: str) -> SessionInfo:
+        current_session = await self.current(user_id)
+        if current_session is not None and current_session.message_count == 0:
+            raise NewSessionExistsError("当前已处于新会话当中")
+
         created_at = int(time.time())
         session_id = uuid4().hex
         set_current_session(user_id, session_id, created_at)

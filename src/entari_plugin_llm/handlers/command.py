@@ -7,7 +7,7 @@ from satori import At
 
 from .._jsondata import set_default_model
 from ..config import get_model_config, get_model_list
-from ..exception import ModelNotFoundError
+from ..exception import ModelNotFoundError, NewSessionExistsError
 from ..manager import LLMSessionManager
 from ..utils import render_model_list, render_session_list, resolve_user_id, select_session
 
@@ -56,11 +56,13 @@ llm_disp = command.mount(llm_alc, skip_for_unmatch=False)
 
 
 @llm_disp.assign("new_cmd")
-async def _(session: UserSession, model: command.Query[str] = command.Query("select_model.model")):
-    conf = get_model_config(model.result if model.available else None, session.channel.id)
-    if model.available:
-        set_default_model(conf.name, session.channel.id)
-    new_session = await LLMSessionManager.create_new_session(session.user_id, model=conf.name)
+async def _(session: UserSession):
+    try:
+        new_session = await LLMSessionManager.create_new_session(session.user_id)
+    except NewSessionExistsError as e:
+        await session.send(str(e))
+        return BLOCK
+
     await session.send(f"以创建并切换到新会话\n会话ID: {new_session.session_id}")
     return BLOCK
 
