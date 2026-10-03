@@ -1,3 +1,4 @@
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from typing import Any, Generic, TypeVar, cast
@@ -16,9 +17,24 @@ class GenericResponse(Generic[TOutput]):
         stopped: bool = False,
     ) -> None:
         self._run_output = run_output
-        self._stream = stream
+        self._stream = self._consume_stream(stream) if stream is not None else None
         self._structured = structured
         self.stopped = stopped
+
+    async def _consume_stream(self, stream: AsyncIterator[Any]) -> AsyncIterator[Any]:
+        try:
+            async for event in stream:
+                if isinstance(event, RunOutput):
+                    self._run_output = event
+                    self.stopped = event.is_paused or event.is_cancelled
+                else:
+                    yield event
+        except (GeneratorExit, asyncio.CancelledError):
+            self.stopped = True
+            raise
+        finally:
+            if close := getattr(stream, "aclose", None):
+                await close()
 
     @property
     def content(self) -> str | TOutput | None:

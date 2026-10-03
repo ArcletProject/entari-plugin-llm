@@ -6,18 +6,14 @@ wraps each registered tool so Agno can invoke it, while the Entari event machine
 handles DI and lifecycle.
 """
 
-import asyncio
 import importlib
 import inspect
-import json
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from threading import Lock
 from typing import Any, overload
 
 from agno.exceptions import AgentRunException
-from agno.run.agent import RunOutput
-from agno.run.requirement import RunRequirement
 from agno.tools import Function, Toolkit
 from agno.tools.function import _warn_hidden_media
 from agno.utils.json_schema import get_json_schema
@@ -27,11 +23,9 @@ from agno.utils.schema import (
     is_bare_media_typed,
     is_schema_excluded,
 )
-from arclet.entari import Session, plugin
+from arclet.entari import plugin
 from arclet.entari.plugin.model import Plugin, current_plugin
 from arclet.letoderea import Propagator, Subscriber
-from arclet.letoderea.context import Contexts, generate_contexts
-from arclet.letoderea.exceptions import ExitState, _ExitException
 from arclet.letoderea.scope import RegisterWrapper
 from arclet.letoderea.subscriber import CompileParam
 from docstring_parser import DocstringParam, parse
@@ -40,7 +34,7 @@ from tarina import Empty
 from .config import _conf
 from .event import JSON_TYPE, LLMToolEvent, tools_pub
 from .log import logger
-from .sessions import SessionInfo
+from .runtime import ToolExecutors
 
 
 @dataclass(frozen=True)
@@ -323,7 +317,7 @@ def _register_tool(_, sub: Subscriber):
     return True
 
 
-def get_agno_tools() -> tuple[list[Toolkit | Function], dict[str, tuple[Callable, Function]]]:
+def get_agno_tools() -> tuple[list[Toolkit | Function], ToolExecutors]:
     tools: list[Toolkit | Function] = []
     tool_owners: dict[str, str] = {}
     for path, toolkit_type in agno_tool_types.items():
@@ -381,56 +375,3 @@ def get_agno_tools() -> tuple[list[Toolkit | Function], dict[str, tuple[Callable
     return tools, executors
 
 
-async def run_llm_tools(
-    response: RunOutput,
-    executors: dict[str, tuple[Callable, Function]],
-    llm_session: SessionInfo | None = None,
-    session: Session | None = None,
-    ctx: Contexts | None = None,
-):
-    stops = []
-
-    requirements = [requirement for requirement in response.active_requirements if requirement.needs_external_execution]
-
-    async def execute_one(req: RunRequirement, context: Contexts):
-        execution = req.tool_execution
-        if not execution:
-            req.set_external_execution_result("No tool execution found")
-            return
-        tool_name = execution.tool_name
-        if not tool_name or tool_name not in executors:
-            req.set_external_execution_result(f"Tool {tool_name} not found")
-            return
-        tool_args = execution.tool_args or {}
-        context.update(tool_args)
-        execute, fn = executors[tool_name]
-        try:
-            result = await execute(context, tool_args)
-            if isinstance(result, ExitState):
-                if result is ExitState.stop:
-                    ans = json.dumps({"ok": True, "data": "已结束对话"}, ensure_ascii=False)
-                else:
-                    ans = json.dumps({"ok": True, "data": "Tool requested to stop the agent run"}, ensure_ascii=False)
-            elif isinstance(result, _ExitException):
-                if result.args[1]:
-                    ans = json.dumps(
-                        {"ok": False, "error": f"Tool requested to stop the agent run with message: {result.args[1]}"},
-                        ensure_ascii=False,
-                    )
-                else:
-                    ans = json.dumps({"ok": True, "data": result.args[0] if result.args else None}, ensure_ascii=False)
-            elif isinstance(result, AgentRunException):
-                ans = json.dumps({"ok": False, "error": f"AgentRunException: {str(result)}"}, ensure_ascii=False)
-            elif isinstance(result, (str, int, float, bool, list, dict, type(None))):
-                ans = json.dumps({"ok": True, "data": result}, ensure_ascii=False)
-            else:
-                ans = json.dumps({"ok": True, "data": str(result)}, ensure_ascii=False)
-            req.set_external_execution_result(ans)
-        except Exception as e:
-            req.set_external_execution_result(json.dumps({"ok": False, "error": repr(e)}, ensure_ascii=False))
-        if fn.stop_after_tool_call:
-            stops.append(req)
-
-    tool_ctx = await generate_contexts(LLMToolEvent(session=session, llm_session=llm_session), inherit_ctx=ctx)
-    await asyncio.gather(*(execute_one(req, tool_ctx.copy()) for req in requirements))
-    return not stops

@@ -1,11 +1,14 @@
 import time
-from typing import Any, Literal, TypeVar, overload
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import aclosing
+from typing import Any, Literal, TypeVar, cast, overload
 
 import litellm
 from agno.agent import Agent
 from agno.db.sqlite import AsyncSqliteDb
 from agno.models.litellm import LiteLLM
 from agno.models.message import Message
+from agno.run.agent import RunErrorEvent, RunOutput, RunOutputEvent
 from agno.run.base import RunStatus
 from arclet.entari import Session, add_service, local_data
 from arclet.letoderea import Contexts
@@ -15,8 +18,9 @@ from launart.status import Phase
 from ._callback import TokenUsageHandler
 from .config import _conf, get_model_config
 from .response import GenericResponse
+from .runtime import ToolExecutors, run_llm_tools
 from .sessions import AgnoSessionStore, SessionInfo
-from .tools import get_agno_tools, run_llm_tools
+from .tools import get_agno_tools
 
 TOutput = TypeVar("TOutput")
 OutputType = Literal["json_object"] | type[Any] | dict[str, Any]
@@ -205,19 +209,68 @@ class LLMService(Service):
 
         agent = Agent(**agent_kwargs)
         if stream:
-            return GenericResponse.from_stream(agent.arun(message, stream=True))
+            return GenericResponse.from_stream(self._stream_agent(agent, message, executors, llm_session, session, ctx))
 
         response = await agent.arun(message)
-        stopped = False
-        while response.is_paused:
-            should_continue = await run_llm_tools(response, executors, llm_session, session, ctx)
-            if not should_continue:
-                stopped = True
-                break
-            response = await agent.acontinue_run(run_id=response.run_id, requirements=response.requirements)
+        while await self._should_continue(response, executors, llm_session, session, ctx):
+            response = await agent.acontinue_run(run_response=response, requirements=response.requirements)
+        return GenericResponse.from_run_output(
+            response, structured=output is not None, stopped=response.is_paused or response.is_cancelled
+        )
+
+    async def _should_continue(
+        self,
+        response: RunOutput,
+        executors: ToolExecutors,
+        llm_session: SessionInfo | None,
+        session: Session | None,
+        ctx: Contexts | None,
+    ) -> bool:
         if response.status is RunStatus.error:
             raise RuntimeError(str(response.content or "Agno agent run failed"))
-        return GenericResponse.from_run_output(response, structured=output is not None, stopped=stopped)
+        if not response.is_paused:
+            return False
+        return await run_llm_tools(response, executors, llm_session, session, ctx)
+
+    async def _stream_agent(
+        self,
+        agent: Agent,
+        message: str | list[Message],
+        executors: ToolExecutors,
+        llm_session: SessionInfo | None,
+        session: Session | None,
+        ctx: Contexts | None,
+    ) -> AsyncIterator[RunOutputEvent | RunOutput]:
+        stream = cast(
+            AsyncGenerator[RunOutputEvent | RunOutput, None],
+            agent.arun(message, stream=True, yield_run_output=True),
+        )
+        while True:
+            response: RunOutput | None = None
+            error: RunErrorEvent | None = None
+            async with aclosing(stream):
+                async for event in stream:
+                    if isinstance(event, RunOutput):
+                        response = event
+                    else:
+                        if isinstance(event, RunErrorEvent):
+                            error = event
+                        yield event
+
+            if error is not None:
+                raise RuntimeError(str(error.content or "Agno agent run failed"))
+            if response is None:
+                raise RuntimeError("Agno stream ended without a run output")
+            if not await self._should_continue(response, executors, llm_session, session, ctx):
+                yield response
+                return
+
+            stream = cast(
+                AsyncGenerator[RunOutputEvent | RunOutput, None],
+                agent.acontinue_run(
+                    run_response=response, requirements=response.requirements, stream=True, yield_run_output=True
+                ),
+            )
 
     async def vision(
         self,
