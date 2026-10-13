@@ -38,6 +38,8 @@ plugins:
   ::help: {}
   ::inspect: {}
   ::auto_reload:
+    watch_dirs:
+      - src
     watch_config: true
 
   entari_plugin_browser:
@@ -68,6 +70,7 @@ plugins:
     tools:
       ::generic: {}
       ::plugin_manager: {}
+      ::agno.tools.calculator.CalculatorTools: {}
       ::agno.tools.exa.ExaTools:
         $call_limit: 2
         # https://docs.agno.com/tools/toolkits/search/exa

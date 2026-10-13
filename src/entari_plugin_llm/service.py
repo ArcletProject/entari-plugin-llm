@@ -206,6 +206,10 @@ class LLMService(Service):
             agent_kwargs["add_history_to_context"] = True
             agent_kwargs["enable_session_summaries"] = True
             agent_kwargs["add_session_summary_to_context"] = False
+            if _conf.history_limit is not None:
+                agent_kwargs["num_history_messages"] = _conf.history_limit
+            if _conf.max_tool_calls_from_history is not None:
+                agent_kwargs["max_tool_calls_from_history"] = _conf.max_tool_calls_from_history
 
         agent = Agent(**agent_kwargs)
         if stream:

@@ -34,6 +34,10 @@ class Config(BasicConfModel, extra="allow"):
     """配置模型及其各自设置的列表"""
     tools: dict[str, dict[str, Any]] = model_field(default_factory=dict)
     """工具"""
+    history_limit: int | None = None
+    """限制每个用户的历史会话数量。如果未设置，则没有限制"""
+    max_tool_calls_from_history: int | None = None
+    """限制历史上下文中的工具调用数量。如果未设置，则没有限制"""
 
     def _reload_tools(self):
         loaded_tools: dict[str, dict[str, Any]] = {}
