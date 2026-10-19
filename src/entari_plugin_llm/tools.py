@@ -105,8 +105,8 @@ def load_tools(configured_tools: dict[str, dict[str, Any]]) -> None:
         if path.startswith("$"):
             continue
         if not path.startswith("agno."):
-            if plg := plugin.load_plugin(path, configured_tools[path]):
-                _configured_tool_plugins.add(plg.id)
+            if result := plugin.load_plugin(path, configured_tools[path]):
+                _configured_tool_plugins.add(result.plugin.id)
             continue
 
         module_path, _, class_name = path.rpartition(".")

@@ -62,9 +62,9 @@ async def load_plugin(session: Session, import_path: str, config: dict | None = 
         return "当前用户没有权限使用此工具"
     sys.path.insert(0, str(_dir))
     try:
-        plg = plugin.load_plugin(import_path, config)
-        if plg is None:
-            return f"未能加载插件 {import_path}，请检查导入路径是否正确"
+        result = plugin.load_plugin(import_path, config)
+        if result.error:
+            return f"加载插件 {import_path} 失败: {result.error!r}"
         return f"插件 {import_path} 已成功加载"
     except Exception as e:
         return f"加载插件 {import_path} 失败: {e!r}"
@@ -161,11 +161,38 @@ async def write_plugin(session: Session, plugin_name: str, content: str, config:
             except Exception as e:
                 return f"插件 {plugin_name} 已成功写入，但重新加载失败: {e!r}"
         try:
-            plg = plugin.load_plugin(plugin_name, config)
-            if plg is None:
-                return f"未能加载插件 {plugin_name}，请检查导入路径是否正确"
+            result = plugin.load_plugin(plugin_name, config)
+            if result.error:
+                return f"写入插件 {plugin_name} 成功，但加载失败: {result.error!r}"
             return f"插件 {plugin_name} 已成功写入并加载"
         except Exception as e:
             return f"写入插件 {plugin_name} 成功，但加载失败: {e!r}"
     finally:
         sys.path.remove(str(_dir))
+
+
+@register_tool
+async def visit_plugin(session: Session, plugin_id: str) -> str:
+    """
+    打开插件的源代码文件。
+
+    **该工具需要先检测超级用户权限。**
+
+    Args:
+        session (Session): 当前会话对象
+        plugin_id: 已加载插件的 ID (插件的导入路径)
+    """
+    if not await detect_superuser(session):
+        return "当前用户没有权限使用此工具"
+    plg = plugin.find_plugin(plugin_id)
+    if not plg:
+        return f"插件 {plugin_id} 未找到，请检查插件 ID 是否正确"
+    try:
+        path = Path(plg.module.__file__).absolute()  # type: ignore
+        if not path.exists():
+            return f"插件 {plugin_id} 的源代码文件未找到"
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return content
+    except Exception as e:
+        return f"读取插件 {plugin_id} 的源代码文件时发生错误: {e!r}"
