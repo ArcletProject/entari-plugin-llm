@@ -4,7 +4,6 @@ from arclet.entari.plugin import PluginRole
 from .config import Config, _conf
 from .event import LLMCollectVariableEvent as LLMCollectVariableEvent
 from .event import LLMToolEvent as LLMToolEvent
-from .log import _suppress_litellm_logging
 from .tools import load_tools
 from .tools import register as register_tool
 
@@ -24,7 +23,6 @@ metadata(
     readme="README.md",
 )
 declare_static()
-_suppress_litellm_logging()
 
 from .response import GenericResponse as GenericResponse
 from .service import llm as llm

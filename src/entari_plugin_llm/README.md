@@ -1,19 +1,51 @@
 # entari-plugin-llm
 
-entari-plugin-llm 是一个用于 Entari 框架的 LLM（大语言模型）插件，提供基于 litellm 的对话能力、函数调用（Tool Call）支持、会话管理以及若干内置实用工具（如图像识别、网页处理等）。
+entari-plugin-llm 是一个用于 Entari 框架的 LLM（大语言模型）插件，提供对话、函数调用（Tool Call）、会话管理、视觉输入以及若干内置实用工具（如图像识别、网页处理等）。
 
-插件目标是为基于 Arclet Entari 的机器人/服务提供一个可配置、可拓展的 LLM 工具箱，便于在对话中调用函数以完成复杂任务，并支持结构化 JSON 输出、视觉识别等能力。
+插件默认使用 [Agno](https://github.com/agno-agi/agno) 的原厂模型适配器：OpenAI 兼容端点走 `OpenAIChat` / `OpenAILike`，Anthropic、Gemini、DashScope、Bedrock 等走各自的原生 SDK。LiteLLM 仅作为长尾 provider 的可选兜底，不再是核心依赖。
 
-主要特性
-- 基于 litellm 的聊天能力（支持流式与非流式）。
+## 主要特性
+
+- 基于 Agno 原生适配器的聊天能力（支持流式与非流式）。
 - 支持“函数调用”机制（Tool Call），可以把插件内的订阅函数自动注册为 LLM 可调用的工具。
 - 会话与上下文持久化（使用 Agno 的 SQLite 会话存储）。
-- 支持视觉（image）输入的模型调用（当模型支持 vision 时）。
+- 支持视觉（image）输入的模型调用（可通过 `vision` 显式声明）。
+- 兼容旧版 LiteLLM 风格的 `provider/model` 模型名，升级后配置无需立即改写。
 - 可配置的模型/提示/工具调用策略，通过 `Config` 加载与热重载（ConfigReload）。
 
-要求
-- Python >= 3.10
+## 要求
+
+- Python >= 3.11
 - 依赖见 `pyproject.toml` 中的 `dependencies`（推荐使用 pdm 或 uv 等现代包管理器）。
+- 核心依赖已包含 `openai`，因此 OpenAI 以及所有 OpenAI 兼容端点开箱可用。
+- 其他原厂 SDK 按需安装：
+
+  ```bash
+  pip install "entari-plugin-llm[anthropic]"   # Claude
+  pip install "entari-plugin-llm[google]"      # Gemini / Vertex AI
+  pip install "entari-plugin-llm[aws-bedrock]" # AWS Bedrock
+  pip install "entari-plugin-llm[mistral]"     # Mistral
+  pip install "entari-plugin-llm[cohere]"      # Cohere
+  pip install "entari-plugin-llm[groq]"        # Groq
+  pip install "entari-plugin-llm[ollama]"      # Ollama
+  pip install "entari-plugin-llm[cerebras]"    # Cerebras
+  ```
+
+- 费用估算（可选）：
+
+  ```bash
+  pip install "entari-plugin-llm[pricing]"
+  ```
+
+  该可选依赖组包含 [`genai-prices`](https://github.com/pydantic/genai-prices)。插件会优先使用 provider 返回的 `RunOutput.metrics.cost`；只有 provider 没有返回费用时，才用 `genai-prices` 按 token 数估算。未安装时仍会正常统计 token，费用显示为“未统计”。
+
+- 长尾 provider 可以继续使用 LiteLLM 兜底：
+
+  ```bash
+  pip install "entari-plugin-llm[litellm]"
+  ```
+
+  该可选依赖组包含 `litellm` 与 `mcp`。未安装时插件仍可正常加载；只有实际用到未适配的 provider 时才会提示安装。
 
 ## 快速开始
 
@@ -40,6 +72,107 @@ entari-plugin-llm 是一个用于 Entari 框架的 LLM（大语言模型）插�
 
 说明：`main.py` 通过 `Entari.load("")` 加载当前目录下的 Entari 配置并启动服务 —— 在实际部署时请提供合适的配置文件与环境变量（例如模型的 API key、base_url 等）。
 
+## 配置模型
+
+每个模型都可以单独设置 `provider`、`api_key`、`base_url`、`vision` 与 `extra`；未设置时回退到全局 `api_key` / `base_url`。
+
+```yaml
+entari_plugin_llm:
+  api_key: ${OPENAI_API_KEY}
+  base_url: https://api.openai.com/v1
+  models:
+    - name: gpt-4o
+
+    - name: deepseek-chat
+      provider: deepseek
+      api_key: ${DEEPSEEK_API_KEY}
+
+    - name: kimi-k2
+      provider: moonshot
+      api_key: ${MOONSHOT_API_KEY}
+
+    - name: glm-4.5
+      provider: zhipu
+      api_key: ${ZHIPU_API_KEY}
+
+    - name: qwen-plus
+      provider: dashscope
+      api_key: ${DASHSCOPE_API_KEY}
+
+    - name: Qwen/Qwen2.5-VL-72B-Instruct
+      provider: siliconflow
+      api_key: ${SILICONFLOW_API_KEY}
+      vision: true
+
+    - name: claude-sonnet-4
+      provider: anthropic
+      api_key: ${ANTHROPIC_API_KEY}
+
+    - name: gemini-2.5-pro
+      provider: google
+      api_key: ${GOOGLE_API_KEY}
+
+    - name: my-gateway-model
+      provider: openai-compatible
+      base_url: https://gateway.example.com/v1
+      api_key: ${GATEWAY_API_KEY}
+
+    - name: local-model
+      provider: vllm
+      base_url: http://localhost:8000/v1
+
+    - name: llama3.2
+      provider: ollama
+      base_url: http://localhost:11434
+```
+
+### provider 解析顺序
+
+1. 显式配置的 `provider`。
+2. 旧版 LiteLLM 风格的 `provider/model` 前缀（如 `deepseek/deepseek-chat`、`anthropic/claude-sonnet-4`）。
+3. `base_url` 的域名（如 `api.deepseek.com`、`api.siliconflow.cn`）。
+4. 模型名前缀（如 `gpt-`、`claude-`、`gemini-`、`qwen`、`deepseek`、`kimi`）。
+5. 未识别且配置了自定义 `base_url` 时，使用 `OpenAILike` 作为通用 OpenAI 兼容端点。
+6. 其余情况回退到 LiteLLM。
+
+常用 provider 名称：`openai`、`openai-compatible`、`anthropic`、`google`、`vertexai`、`dashscope`、`deepseek`、`siliconflow`、`moonshot`、`groq`、`openrouter`、`xai`、`together`、`fireworks`、`perplexity`、`sambanova`、`cerebras`、`nebius`、`mistral`、`cohere`、`ollama`、`vllm`、`lmstudio`、`zhipu`、`minimax`、`volcengine`、`hunyuan`、`stepfun`、`yi`、`baichuan`、`sensenova`、`qianfan`、`spark`、`aws-bedrock`、`litellm`。
+
+### 旧配置迁移
+
+旧的 LiteLLM 模型名可以直接保留，插件会在工厂中解析前缀并映射到原生适配器：
+
+```yaml
+models:
+  - name: deepseek/deepseek-chat   # 等价于 provider: deepseek + name: deepseek-chat
+  - name: anthropic/claude-sonnet-4
+```
+
+如果某个 provider 没有原生适配器，或原生 SDK 未安装但 LiteLLM 已安装，插件会自动降级到 LiteLLM。
+
+### 视觉能力
+
+Agno 没有统一的能力查询接口，因此插件使用以下规则：
+
+- `vision: true` / `vision: false` 优先，适合显式覆盖。
+- 未设置时根据 provider 与模型名推断；无法识别时按不支持处理。
+- 常见视觉模型（`gpt-4o`、`claude-3/4`、`gemini`、`*-vl`、`glm-4v`、`kimi-latest` 等）会被自动识别。
+
+### 额外参数
+
+`extra` 中的键如果与适配器的构造字段同名（如 `temperature`、`max_tokens`、`reasoning_effort`），会作为构造参数传入；其余键会合并进 `request_params`。运行时通过 `llm.generate(..., temperature=0.3)` 传入的参数优先级最高。
+
+```yaml
+models:
+  - name: gpt-4o
+    extra:
+      temperature: 0.2
+      max_tokens: 4096
+      request_params:
+        seed: 42
+```
+
+对于 GPT-5 / o 系列等不接受采样参数的模型，插件会自动忽略 `temperature`、`top_p`、`frequency_penalty`、`presence_penalty` 并输出一条警告。
+
 ## 基本用法（示例）
 
 作为插件使用时，包会在导入时通过 `metadata()` 注册插件信息，并在运行时加载配置、工具与服务。你可以在代码中直接引用导出的服务：
@@ -51,17 +184,8 @@ from entari_plugin_llm import llm
 resp = await llm.generate("Hello world")
 ```
 
-### 加速启动
-
-`litellm` 导入时会尝试通过网络加载一遍 `model_cost_map`，导致几秒钟的延迟。若你希望在启动时跳过这一步，可以在导入前设置环境变量：
-
-```dotenv
-LITELLM_LOCAL_MODEL_COST_MAP=true
-```
-
-来跳过网络加载，直接使用本地的 `model_cost_map.json`。
-
 ### 工具与函数调用（Tool）
+
 - 插件将符合 arclet.letoderea 订阅器规范的函数自动注册为可被 LLM 调用的工具。
 - 工具的参数与文档由函数的 docstring 与类型注解自动生成 JSON Schema，以便 LLM 在函数调用时进行参数填充。
 
@@ -69,12 +193,25 @@ LITELLM_LOCAL_MODEL_COST_MAP=true
 
 插件使用 `Config` 对象管理模型、提示词、上下文长度以及工具调用的最大循环步数。修改 Entari 插件配置并触发 `ConfigReload` 事件可以热重载这些设置。
 
+### Token 与费用统计
+
+插件直接读取 Agno 原生 `RunOutput.metrics`：
+
+- `total_tokens`：全局与会话统计保持一致，不依赖 LiteLLM 的 callback。
+- `cost`：优先使用 provider 返回的费用（例如 OpenRouter、部分 OpenAI 兼容端点）。如果 provider 没有返回，且安装了 `pricing` 可选依赖，则通过 `genai-prices` 根据模型名与 input/output/cache token 数估算。
+- 未知模型、`genai-prices` 未安装或价格数据不匹配时，费用显示为“未统计”，不会影响正常对话。
+- 费用以 USD 显示（provider 返回值或 `genai-prices` 估算）；`genai-prices` 使用的是其内置价格快照，实际账单请以 provider 为准。
+
 ## 项目结构（重要文件与目录）
 
 - `src/entari_plugin_llm/` - 插件实现代码
   - `__init__.py` - 插件元信息与自动注册
-  - `service.py` - LLM 服务实现（封装了 litellm 的调用、工具调用处理、vision 等）
-  - `model.py` - 数据库 ORM 模型（会话与上下文）
+  - `config.py` - 模型与插件配置
+  - `model_factory.py` - provider → Agno 原生适配器工厂，含 LiteLLM 兜底
+  - `_capabilities.py` - 视觉能力推断
+  - `_pricing.py` - provider cost 读取与 `genai-prices` 可选费用估算
+  - `_litellm.py` - LiteLLM 可选依赖的懒加载入口
+  - `service.py` - LLM 服务实现（Agent 调用、工具调用处理、vision、token/费用统计等）
   - `handlers/` - Entari 事件处理器（chat、command、check 等）
   - `tools/` - 插件提供的工具注册逻辑与内置工具（如 image_vision、webpage_processor）
 - `main.py` - 一个简单的启动示例
@@ -83,6 +220,12 @@ LITELLM_LOCAL_MODEL_COST_MAP=true
 ## 开发与调试
 
 在开发过程中你可以编辑 `entari.yml` 或插件配置，并使用 Entari 的配置热重载来应用更改。
+
+运行单元测试：
+
+```bash
+python -m unittest discover -s tests -v
+```
 
 ## 贡献
 
@@ -98,5 +241,4 @@ LITELLM_LOCAL_MODEL_COST_MAP=true
 
 ## 更多信息
 
-请参阅 `pyproject.toml` 中的依赖与可选依赖（如浏览器、Google provider 等）以获取额外功能支持。
-
+请参阅 `pyproject.toml` 中的依赖与可选依赖（如浏览器、各 provider SDK、`genai-prices` 费用估算、LiteLLM 兜底等）以获取额外功能支持。

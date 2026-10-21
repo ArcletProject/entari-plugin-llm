@@ -3,10 +3,8 @@ from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import aclosing
 from typing import Any, Literal, TypeVar, cast, overload
 
-import litellm
 from agno.agent import Agent
 from agno.db.sqlite import AsyncSqliteDb
-from agno.models.litellm import LiteLLM
 from agno.models.message import Message
 from agno.run.agent import RunErrorEvent, RunOutput, RunOutputEvent
 from agno.run.base import RunStatus
@@ -15,8 +13,10 @@ from arclet.letoderea import Contexts
 from launart import Launart, Service
 from launart.status import Phase
 
-from ._callback import TokenUsageHandler
-from .config import _conf, get_model_config
+from ._capabilities import supports_vision
+from ._pricing import resolve_metrics_cost
+from .config import ScopedModel, _conf, get_model_config
+from .model_factory import create_model
 from .response import GenericResponse
 from .runtime import ToolExecutors, run_llm_tools
 from .sessions import AgnoSessionStore, SessionInfo
@@ -32,9 +32,11 @@ class LLMService(Service):
     def __init__(self) -> None:
         super().__init__()
         self.total_tokens = 0
+        self.total_cost = 0.0
         self.total_calls = 0
         self.start_time: float = 0.0
-        self.usage_handler = TokenUsageHandler(self)
+        self._run_token_totals: dict[str, int] = {}
+        self._run_cost_totals: dict[str, float] = {}
         self._db: AsyncSqliteDb | None = None
         self._sessions: AgnoSessionStore | None = None
 
@@ -180,13 +182,8 @@ class LLMService(Service):
             )
             instructions = f"{instructions}\n\n{variable_instructions}" if instructions else variable_instructions
 
-        model_request_params = {**model_config.extra, **request_params}
-        agno_model = LiteLLM(
-            id=model_config.name,
-            api_key=model_config.api_key,
-            api_base=model_config.base_url,
-            request_params=model_request_params or None,
-        )
+        model_request_params = request_params or None
+        agno_model = create_model(model_config, request_params=model_request_params)
 
         agent_kwargs: dict[str, Any] = {
             "id": self.id,
@@ -213,10 +210,12 @@ class LLMService(Service):
 
         agent = Agent(**agent_kwargs)
         if stream:
-            return GenericResponse.from_stream(self._stream_agent(agent, message, executors, llm_session, session, ctx))
+            return GenericResponse.from_stream(
+                self._stream_agent(agent, message, executors, llm_session, session, ctx, model_config)
+            )
 
         response = await agent.arun(message)
-        while await self._should_continue(response, executors, llm_session, session, ctx):
+        while await self._should_continue(response, executors, llm_session, session, ctx, model_config):
             response = await agent.acontinue_run(run_response=response, requirements=response.requirements)
         return GenericResponse.from_run_output(
             response, structured=output is not None, stopped=response.is_paused or response.is_cancelled
@@ -229,12 +228,52 @@ class LLMService(Service):
         llm_session: SessionInfo | None,
         session: Session | None,
         ctx: Contexts | None,
+        model_config: ScopedModel,
     ) -> bool:
         if response.status is RunStatus.error:
             raise RuntimeError(str(response.content or "Agno agent run failed"))
+        self._track_usage(response, model_config)
         if not response.is_paused:
             return False
         return await run_llm_tools(response, executors, llm_session, session, ctx)
+
+    def _track_usage(self, response: RunOutput, model_config: ScopedModel) -> None:
+        """Accumulate tokens and cost from Agno's native ``RunOutput.metrics``.
+
+        Agno keeps metrics cumulative across continuation segments of the same
+        run, so only the delta relative to the previous segment is counted.
+        """
+
+        metrics = getattr(response, "metrics", None)
+        if metrics is None:
+            return
+
+        run_id = getattr(response, "run_id", None) or f"anonymous-{id(response)}"
+        total = metrics.get("total_tokens") if isinstance(metrics, dict) else getattr(metrics, "total_tokens", None)
+        total_tokens = None
+        if total is not None:
+            try:
+                total_tokens = int(total)
+            except (TypeError, ValueError):
+                total_tokens = None
+
+        if total_tokens is not None:
+            previous = self._run_token_totals.get(run_id, 0)
+            if total_tokens > previous:
+                self.total_tokens += total_tokens - previous
+                self._run_token_totals[run_id] = total_tokens
+
+        cost = resolve_metrics_cost(metrics, model_config)
+        if cost is not None:
+            previous_cost = self._run_cost_totals.get(run_id, 0.0)
+            if cost > previous_cost:
+                self.total_cost += cost - previous_cost
+            self._run_cost_totals[run_id] = max(previous_cost, cost)
+
+        self.total_calls += 1
+        if not getattr(response, "is_paused", False):
+            self._run_token_totals.pop(run_id, None)
+            self._run_cost_totals.pop(run_id, None)
 
     async def _stream_agent(
         self,
@@ -244,6 +283,7 @@ class LLMService(Service):
         llm_session: SessionInfo | None,
         session: Session | None,
         ctx: Contexts | None,
+        model_config: ScopedModel,
     ) -> AsyncIterator[RunOutputEvent | RunOutput]:
         stream = cast(
             AsyncGenerator[RunOutputEvent | RunOutput, None],
@@ -265,7 +305,7 @@ class LLMService(Service):
                 raise RuntimeError(str(error.content or "Agno agent run failed"))
             if response is None:
                 raise RuntimeError("Agno stream ended without a run output")
-            if not await self._should_continue(response, executors, llm_session, session, ctx):
+            if not await self._should_continue(response, executors, llm_session, session, ctx, model_config):
                 yield response
                 return
 
@@ -284,7 +324,7 @@ class LLMService(Service):
     ) -> GenericResponse[None]:
         """Describe an image through the standard generate path."""
         model_config = get_model_config(model)
-        if not litellm.supports_vision(model_config.name):
+        if not supports_vision(model_config):
             raise RuntimeError(f"Model {model_config.name} does not support vision input")
 
         if isinstance(image_url, str):
@@ -303,8 +343,6 @@ class LLMService(Service):
 
     async def launch(self, manager: Launart) -> None:
         async with self.stage("preparing"):
-            litellm.drop_params = True
-            litellm.callbacks = [self.usage_handler]
             self.start_time = time.time()
             db_path = local_data.get_data_file("entari_plugin_llm", "agno.db")
             self._db = AsyncSqliteDb(db_file=str(db_path))

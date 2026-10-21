@@ -8,13 +8,3 @@ def log(level: str, rich_text: str) -> None:
         rich_text.replace("[", "<").replace("]", ">"),
         alt=rich_text,
     )
-
-
-def _suppress_litellm_logging() -> None:
-    """Configure logging to suppress LiteLLM info and debug logs.
-
-    See https://github.com/BerriAI/litellm/issues/6813
-    """
-    import logging
-
-    logging.getLogger("LiteLLM").setLevel(logging.WARNING)

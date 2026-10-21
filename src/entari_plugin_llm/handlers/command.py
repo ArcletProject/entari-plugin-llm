@@ -128,6 +128,8 @@ async def _(session: UserSession, user_id: command.Match[str | At]):
         return BLOCK
 
     created_at = info["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+    total_cost = info.get("total_cost")
+    cost_line = f"累计费用: ${total_cost:.6f}" if total_cost is not None else "累计费用: 未统计"
     await session.send(
         "\n".join(
             [
@@ -136,6 +138,7 @@ async def _(session: UserSession, user_id: command.Match[str | At]):
                 f"使用模型: {info['model']}",
                 f"消息数: {info['message_count']}",
                 f"累计 Token: {info['total_tokens']}",
+                cost_line,
                 f"创建时间: {created_at}",
             ]
         )

@@ -17,6 +17,8 @@ from ._jsondata import (
     set_current_session,
     set_session_model,
 )
+from ._pricing import resolve_metrics_cost
+from .config import get_model_config, get_model_list
 from .exception import NewSessionExistsError
 
 
@@ -31,6 +33,7 @@ class SessionInfo:
     message_count: int
     created_at: datetime
     summary: str | None = None
+    total_cost: float | None = None
 
 
 class AgnoSessionStore:
@@ -152,25 +155,38 @@ class AgnoSessionStore:
             topic = "新对话"
         topic = topic[:24] or "新对话"
 
+        model = get_session_model(session.session_id) or self._stored_model(session)
+        model_config = None
+        if model and model in get_model_list():
+            try:
+                model_config = get_model_config(model)
+            except Exception:
+                model_config = None
+
         total_tokens = 0
+        total_cost: float | None = None
         for run in session.runs or []:
             metrics = getattr(run, "metrics", None)
             if isinstance(metrics, dict):
                 total_tokens += int(metrics.get("total_tokens") or 0)
             elif metrics is not None:
                 total_tokens += int(getattr(metrics, "total_tokens", 0) or 0)
+            run_cost = resolve_metrics_cost(metrics, model_config)
+            if run_cost is not None:
+                total_cost = (total_cost or 0.0) + run_cost
 
         message_count = sum(1 for message in session.get_chat_history() if message.role in {"user", "assistant"})
         return SessionInfo(
             session_id=session.session_id,
             user_id=user_id,
             topic=topic,
-            model=get_session_model(session.session_id) or self._stored_model(session),
+            model=model,
             is_active=session.session_id == current_id,
             total_tokens=total_tokens,
             message_count=message_count,
             created_at=datetime.fromtimestamp(session.created_at or 0),
             summary=summary_text,
+            total_cost=total_cost,
         )
 
     @staticmethod
@@ -199,4 +215,5 @@ class AgnoSessionStore:
             total_tokens=0,
             message_count=0,
             created_at=datetime.fromtimestamp(created_at),
+            total_cost=None,
         )

@@ -10,9 +10,14 @@ from .log import log
 
 class ScopedModel(BasicConfModel):
     name: str
-    """用于 OpenAI API 的模型"""
+    """模型名称（或 `provider/model` 形式的旧版 LiteLLM 写法）"""
     alias: str | None = None
     """模型的别名"""
+    provider: str | None = None
+    """模型提供方，如 openai、anthropic、google、deepseek、dashscope、bedrock 等。
+    未设置时根据 base_url 与模型名自动推断"""
+    vision: bool | None = None
+    """该模型是否支持图片输入。未设置时根据提供方与模型名推断"""
     api_key: str | None = None
     """用于使用 OpenAI API 进行身份验证的 API 密钥。如果未设置，则回退到全局 api_key"""
     base_url: str = "https://api.openai.com/v1"
@@ -98,6 +103,8 @@ def get_model_config(model_name: str | None = None, channel: str = "$default") -
         model_cp = ScopedModel(
             name=model.name,
             alias=model.alias,
+            provider=model.provider,
+            vision=model.vision,
             api_key=model.api_key,
             base_url=model.base_url,
             prompt=model.prompt,

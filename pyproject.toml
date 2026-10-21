@@ -8,10 +8,9 @@ authors = [
 ]
 dependencies = [
     "arclet-entari>=0.19.0",
-    "agno[sqlite]>=3.1.0",
+    "agno[sqlite,openai]>=3.1.0",
     "docstring-parser>=0.17.0",
     "entari-plugin-user>=0.2.0",
-    "litellm>=1.103.2",
 ]
 requires-python = ">=3.11,<3.16"
 readme = "README.md"
@@ -21,8 +20,42 @@ license = {"text" = "MIT"}
 browser = [
     "entari-plugin-browser>=0.5.4",
 ]
+# Native provider adapters. The OpenAI-compatible family only needs the core
+# `openai` dependency; the SDKs below are opt-in to keep installs slim.
 google = [
-    "litellm[google]>=1.84.0",
+    "agno[google]>=3.1.0",
+]
+anthropic = [
+    "agno[anthropic]>=3.1.0",
+]
+aws-bedrock = [
+    "agno[aws-bedrock]>=3.1.0",
+]
+mistral = [
+    "agno[mistral]>=3.1.0",
+]
+cohere = [
+    "agno[cohere]>=3.1.0",
+]
+groq = [
+    "agno[groq]>=3.1.0",
+]
+ollama = [
+    "agno[ollama]>=3.1.0",
+]
+cerebras = [
+    "agno[cerebras]>=3.1.0",
+]
+# Optional local cost estimation for providers that do not report usage.cost.
+# Provider-reported costs are always used first, so this extra is not required.
+pricing = [
+    "genai-prices>=0.1.13",
+]
+# Optional long-tail fallback. Most providers use native adapters and do not
+# need this extra.
+litellm = [
+    "litellm>=1.103.2",
+    "mcp>=2.2.0,<3",
 ]
 
 [dependency-groups]
@@ -35,6 +68,7 @@ dev = [
     "ddgs>=9.11.2",
     "satori-python-adapter-milky>=0.3.1",
     "litellm[mcp]>=1.106.0",
+    "genai-prices>=0.1.13",
 ]
 
 [tool.ruff]

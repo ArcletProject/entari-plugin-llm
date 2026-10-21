@@ -1,12 +1,12 @@
 from dataclasses import asdict
 from typing import Any
 
-import litellm
 from agno.models.message import Message
 from arclet.entari import Image, MessageChain, Text
 from arclet.letoderea import Contexts, waterfall
 from entari_plugin_user import UserSession  # entari: plugin
 
+from ._capabilities import supports_vision
 from .config import get_model_config
 from .event import LLMCollectVariableEvent
 from .service import llm
@@ -60,7 +60,7 @@ class LLMSessionManager:
         content: list[dict[str, Any]] = []
         if user_prompt.has(Text):
             content.append({"type": "text", "text": user_prompt.extract_plain_text()})
-        if user_prompt.has(Image) and litellm.supports_vision(selected_model):
+        if user_prompt.has(Image) and supports_vision(get_model_config(selected_model)):
             for image in list(user_prompt.select(Image)):
                 content.append({"type": "image_url", "image_url": {"url": image.src}})
         user_message = Message(
