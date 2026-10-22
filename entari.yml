@@ -58,10 +58,11 @@ plugins:
       - name: "deepseek/deepseek-chat"
         api_key: ${{ env.DEEPSEEK_API_KEY }}
         base_url: https://api.deepseek.com
-      - name: "deepseek/deepseek-v4-flash"
-        alias: "deepseek-v4-flash"
+      - name: "deepseek/deepseek-flash"
+        alias: "deepseek-flash"
         api_key: ${{ env.DEEPSEEK_API_KEY }}
         base_url: https://api.deepseek.com
+        vision: true
 #      - name: "gemini/gemini-pro"
 #        api_key: ${{ env.get('GEMINI_API_KEY', None) }}
 #        base_url: https://generativelanguage.googleapis.com
@@ -74,7 +75,7 @@ plugins:
       ::agno.tools.exa.ExaTools:
         $call_limit: 2
         # https://docs.agno.com/tools/toolkits/search/exa
-        api_key: ${{ env.EXA_API_KEY }}
+        api_key: ''
         enable_search: true
         enable_get_contents: true
         enable_find_similar: true

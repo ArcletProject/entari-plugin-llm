@@ -1,5 +1,6 @@
 import asyncio
 import platform
+import shutil
 
 from arclet.entari import Session, local_data
 from arclet.entari.filter import superusers
@@ -35,14 +36,31 @@ async def detect_superuser(session: Session) -> bool:
 
 
 @register_tool
-async def run_command(session: Session, command: str) -> str:
+async def shutil_which(command: str) -> str:
+    """
+    查找指定命令的可执行文件路径。
+
+    Args:
+        command (str): 要查找的命令
+
+    Returns:
+        str: 命令的可执行文件路径，如果未找到则返回空字符串
+    """
+    return shutil.which(command) or ""
+
+
+@register_tool
+async def run_command(session: Session, shell: str, command: str) -> str:
     """
     执行指定的 shell 命令并返回输出结果。
 
     **该工具需要先检测超级用户权限。**
 
+    **shell 类型请根据实际环境选择，例如 "bash", "sh", "pwsh" 等，并先用 `shutil_which` 工具确认 shell 的可执行文件路径。**
+
     Args:
         session (Session): 当前会话对象
+        shell (str): 要使用的 shell 类型，例如 "bash", "sh", "pwsh" 等
         command (str): 要执行的 shell 命令
 
     Returns:
@@ -51,13 +69,23 @@ async def run_command(session: Session, command: str) -> str:
     if not await detect_superuser(session):
         return "当前用户没有权限使用此工具"
     try:
-        process = await asyncio.create_subprocess_shell(
-            command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        process = await asyncio.create_subprocess_exec(
+            shell, "/C" if shell.lower().endswith("cmd.exe") else "-c", command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await process.communicate()
         if process.returncode != 0:
-            return f"命令执行失败，错误信息: {stderr.decode().strip()}"
-        return stdout.decode().strip()
+            try:
+                error_message = stderr.decode().strip()
+            except UnicodeDecodeError:
+                error_message = stderr.decode("gbk", errors="ignore").strip()
+            return f"命令执行失败，错误信息: {error_message}"
+        try:
+            output = stdout.decode().strip()
+        except UnicodeDecodeError:
+            output = stdout.decode("gbk", errors="ignore").strip()
+        return output
     except Exception as e:
         return f"执行命令时发生错误: {e}"
 
