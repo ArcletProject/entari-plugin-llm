@@ -10,6 +10,7 @@ entari-plugin-llm 是一个用于 Entari 框架的 LLM（大语言模型）插�
 - 支持“函数调用”机制（Tool Call），可以把插件内的订阅函数自动注册为 LLM 可调用的工具。
 - 会话与上下文持久化（使用 Agno 的 SQLite 会话存储）。
 - 支持视觉（image）输入的模型调用（可通过 `vision` 显式声明）。
+- 支持 Agno 原生 Skills：按模型或全局启用，`auto` 按需加载，`always` 直接注入格式约束。
 - 兼容旧版 LiteLLM 风格的 `provider/model` 模型名，升级后配置无需立即改写。
 - 可配置的模型/提示/工具调用策略，通过 `Config` 加载与热重载（ConfigReload）。
 
@@ -157,6 +158,38 @@ Agno 没有统一的能力查询接口，因此插件使用以下规则：
 - 未设置时根据 provider 与模型名推断；无法识别时按不支持处理。
 - 常见视觉模型（`gpt-4o`、`claude-3/4`、`gemini`、`*-vl`、`glm-4v`、`kimi-latest` 等）会被自动识别。
 
+### 技能（Skills）
+
+插件使用 Agno 原生的 `Skills` / `LocalSkills`。技能是独立的 `SKILL.md` 目录，不需要把大段提示词复制进 `entari.yml`。
+
+```yaml
+entari_plugin_llm:
+  # 全局默认技能，所有未单独配置 skills 的模型都会继承
+  skills:
+    - xml-output
+
+  models:
+    - name: gpt-4o
+      # 覆盖全局技能；空列表 [] 表示该模型关闭所有技能
+      skills:
+        - name: xml-output
+          mode: always
+        - ./my-skills
+```
+
+支持两种模式：
+
+- `auto`（默认）：Agno 只在系统提示中放入技能名称与描述，模型需要时通过 `get_skill_instructions` 工具加载完整指令；同时提供 reference 与 script 工具。
+- `always`：插件把该技能的完整指令直接拼进系统提示，适合“每次回答都必须遵守”的输出格式约束。
+
+内置技能：
+
+- `xml-output`：要求模型返回单个、转义正确的 XML 文档，默认根节点为 `<result>`。
+
+自定义技能可以指向包含 `SKILL.md` 的单个技能目录，或包含多个技能子目录的父目录。技能不需要额外依赖；未启用时不会向 Agent 注入任何 skill 工具或提示。
+
+注意：`always` 只是把指令放进系统提示，仍然是提示词约束，不是 XML Schema 校验。如果 XML 需要被程序严格解析，建议继续使用 structured output 生成数据，再自行序列化为 XML，或对模型输出做校验与重试。
+
 ### 额外参数
 
 `extra` 中的键如果与适配器的构造字段同名（如 `temperature`、`max_tokens`、`reasoning_effort`），会作为构造参数传入；其余键会合并进 `request_params`。运行时通过 `llm.generate(..., temperature=0.3)` 传入的参数优先级最高。
@@ -208,9 +241,11 @@ resp = await llm.generate("Hello world")
   - `__init__.py` - 插件元信息与自动注册
   - `config.py` - 模型与插件配置
   - `model_factory.py` - provider → Agno 原生适配器工厂，含 LiteLLM 兜底
-  - `_capabilities.py` - 视觉能力推断
-  - `_pricing.py` - provider cost 读取与 `genai-prices` 可选费用估算
+  - `capabilities.py` - 视觉能力推断
+  - `pricing.py` - provider cost 读取与 `genai-prices` 可选费用估算
+  - `skills.py` - Agno Skills 的解析、加载与 `auto` / `always` 模式
   - `_litellm.py` - LiteLLM 可选依赖的懒加载入口
+  - `skills/` - 内置技能目录（如 `skills/xml-output/SKILL.md`）
   - `service.py` - LLM 服务实现（Agent 调用、工具调用处理、vision、token/费用统计等）
   - `handlers/` - Entari 事件处理器（chat、command、check 等）
   - `tools/` - 插件提供的工具注册逻辑与内置工具（如 image_vision、webpage_processor）

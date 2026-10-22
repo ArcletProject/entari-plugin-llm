@@ -3,7 +3,7 @@ import inspect
 from urllib.parse import quote
 
 import httpx
-from arclet.entari import Session, command, plugin
+from arclet.entari import Entari, Session, command, plugin
 from arclet.letoderea import BLOCK
 
 from entari_plugin_llm import LLMCollectVariableEvent, LLMToolEvent, register_tool
@@ -143,7 +143,7 @@ async def get_weather(session: Session, city: str = ""):
 
 
 @plugin.dispatch(LLMCollectVariableEvent)
-async def trust_collect(session: Session):
-    if session.event.user and session.event.user.id == "3165388245":
+async def trust_collect(session: Session, app: Entari):
+    if session.event.user and session.event.user.id in app.config.basic.superusers[session.account.platform]:
         return {"trust": 200}
     return {"trust": 5}

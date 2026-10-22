@@ -5,7 +5,7 @@
 groups = ["default", "browser", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d38e113ad5aab25b511ef217365c50f0d4b0f784c3af194e99b5912b44aaae1a"
+content_hash = "sha256:e4d4e7a6b0cefd8b3cfe316db096824e22f871d6d9b26df1d187b015384d96e5"
 
 [[metadata.targets]]
 requires_python = ">=3.11,<3.14"
@@ -725,6 +725,27 @@ files = [
 ]
 
 [[package]]
+name = "exa-py"
+version = "2.26.0"
+requires_python = ">=3.9"
+summary = "Python SDK for Exa API."
+groups = ["dev"]
+marker = "python_version >= \"3.11\" and python_version < \"3.14\""
+dependencies = [
+    "httpcore>=1.0.9",
+    "httpx>=0.28.1",
+    "openai>=1.48",
+    "pydantic>=2.10.6",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+    "typing-extensions>=4.12.2",
+]
+files = [
+    {file = "exa_py-2.26.0-py3-none-any.whl", hash = "sha256:010f9774642debce0b95ef6a69f4e9a36c3e9160f024f9f3d43ac6d0c98ee58f"},
+    {file = "exa_py-2.26.0.tar.gz", hash = "sha256:906dd61d44f106a7103e12f00cb5773d62ace3d3b9ebe27298ec9766a52851ed"},
+]
+
+[[package]]
 name = "expiringdictx"
 version = "1.1.0"
 requires_python = "<4,>=3.9"
@@ -1374,7 +1395,7 @@ name = "linkify-it-py"
 version = "2.1.0"
 requires_python = ">=3.10"
 summary = "Links recognition library with FULL unicode support."
-groups = ["browser", "dev"]
+groups = ["browser"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
     "uc-micro-py",
@@ -1611,7 +1632,7 @@ name = "markdown-it-py"
 version = "3.0.0"
 requires_python = ">=3.8"
 summary = "Python port of markdown-it. Markdown parsing, done right!"
-groups = ["default", "browser", "dev"]
+groups = ["default", "browser"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
     "mdurl~=0.1",
@@ -1627,7 +1648,7 @@ version = "3.0.0"
 extras = ["linkify", "plugins"]
 requires_python = ">=3.8"
 summary = "Python port of markdown-it. Markdown parsing, done right!"
-groups = ["browser", "dev"]
+groups = ["browser"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
     "linkify-it-py<3,>=1",
@@ -1760,7 +1781,7 @@ name = "mdit-py-plugins"
 version = "0.6.1"
 requires_python = ">=3.10"
 summary = "Collection of plugins for markdown-it-py"
-groups = ["browser", "dev"]
+groups = ["browser"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
     "markdown-it-py<5.0.0,>=2.0.0",
@@ -1775,7 +1796,7 @@ name = "mdurl"
 version = "0.1.2"
 requires_python = ">=3.7"
 summary = "Markdown URL utilities"
-groups = ["default", "browser", "dev"]
+groups = ["default", "browser"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
@@ -1886,21 +1907,6 @@ files = [
 ]
 
 [[package]]
-name = "nonechat"
-version = "0.6.1"
-requires_python = "<4.0,>=3.9"
-summary = "Awesome chat console using Textual"
-groups = ["dev"]
-marker = "python_version >= \"3.11\" and python_version < \"3.14\""
-dependencies = [
-    "textual<4.0.0,>=3.7.0",
-]
-files = [
-    {file = "nonechat-0.6.1-py3-none-any.whl", hash = "sha256:899f26416e01cc0f3beb4798e8ce73a47bac4627b610a0609fe07f6d8246bf0c"},
-    {file = "nonechat-0.6.1.tar.gz", hash = "sha256:4cf39badc4af1ebf72062dac879bd8f0a0063ce4f8e53e9679988b2ec6667117"},
-]
-
-[[package]]
 name = "nonestorage"
 version = "0.1.0"
 requires_python = "<4.0,>=3.9"
@@ -1959,18 +1965,6 @@ marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 files = [
     {file = "packaging-26.2-py3-none-any.whl", hash = "sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e"},
     {file = "packaging-26.2.tar.gz", hash = "sha256:ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661"},
-]
-
-[[package]]
-name = "platformdirs"
-version = "4.10.0"
-requires_python = ">=3.10"
-summary = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
-groups = ["dev"]
-marker = "python_version >= \"3.11\" and python_version < \"3.14\""
-files = [
-    {file = "platformdirs-4.10.0-py3-none-any.whl", hash = "sha256:fb516cdb12eb0d857d0cd85a7c57cea4d060bee4578d6cf5a14dfdf8cbf8784a"},
-    {file = "platformdirs-4.10.0.tar.gz", hash = "sha256:31e761a6a0ca04faf7353ea759bdba55652be214725111e5aac52dfa29d4bef7"},
 ]
 
 [[package]]
@@ -2250,7 +2244,7 @@ name = "pygments"
 version = "2.20.0"
 requires_python = ">=3.9"
 summary = "Pygments is a syntax highlighting package written in Python."
-groups = ["default", "browser", "dev"]
+groups = ["default", "browser"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 files = [
     {file = "pygments-2.20.0-py3-none-any.whl", hash = "sha256:81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176"},
@@ -2517,7 +2511,7 @@ name = "rich"
 version = "15.0.0"
 requires_python = ">=3.9.0"
 summary = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
-groups = ["default", "dev"]
+groups = ["default"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
     "markdown-it-py>=2.2.0",
@@ -2652,19 +2646,27 @@ files = [
 ]
 
 [[package]]
-name = "satori-python-adapter-console"
-version = "0.6.0"
+name = "satori-python"
+version = "1.3.9.post1"
 requires_python = "<4.0,>=3.10"
-summary = "Satori Protocol SDK for python, adapter for Nonechat"
+summary = "Satori Protocol SDK for python"
 groups = ["dev"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
-    "nonechat<0.7.0,>=0.6.0",
-    "satori-python-server<1.4.0,>=1.3.7",
+    "aiohttp>=3.9.3",
+    "cryptography>=46.0.4",
+    "graia-amnesia[uvicorn]<0.12.0,>=0.11.0",
+    "launart>=0.8.2",
+    "loguru>=0.7.2",
+    "python-multipart>=0.0.9",
+    "starlette>=0.40.0",
+    "typing-extensions>=4.7.0",
+    "websockets>=15.0.1",
+    "yarl>=1.9.4",
 ]
 files = [
-    {file = "satori_python_adapter_console-0.6.0-py3-none-any.whl", hash = "sha256:042365b28ac2adbf2edbcf848f8d8833c5687baf83d6472c0a7e9eba6726e7c5"},
-    {file = "satori_python_adapter_console-0.6.0.tar.gz", hash = "sha256:411865a37a492e21e0c5e117f2759c0781b0b44a69b066fddc929c15393fa3ca"},
+    {file = "satori_python-1.3.9.post1-py3-none-any.whl", hash = "sha256:1b6a6f8d504a1f07b1c29c4186a554dd111c2e7541b1e5f624338ac410091af2"},
+    {file = "satori_python-1.3.9.post1.tar.gz", hash = "sha256:4e255d441fda7ef3b21dd8cfe0e2120e5b6d331517c6ca356ee8ac364fb89f79"},
 ]
 
 [[package]]
@@ -2695,6 +2697,22 @@ dependencies = [
 files = [
     {file = "satori_python_adapter_onebot11-0.5.0-py3-none-any.whl", hash = "sha256:d9d52cf581152dff369f8833cb66a0b9349d0c6e6d796bd2f14db4e93ac020a9"},
     {file = "satori_python_adapter_onebot11-0.5.0.tar.gz", hash = "sha256:2ffd70f2e25afa64d69715102e5392124fdf3b1c27a2ebddd57f30bf929f8d6b"},
+]
+
+[[package]]
+name = "satori-python-adapter-qq"
+version = "0.4.3"
+requires_python = "<4.0,>=3.10"
+summary = "Satori Protocol SDK for python, adapter for QQ"
+groups = ["dev"]
+marker = "python_version >= \"3.11\" and python_version < \"3.14\""
+dependencies = [
+    "cryptography>=46.0.4",
+    "satori-python<1.4.0,>=1.3.7",
+]
+files = [
+    {file = "satori_python_adapter_qq-0.4.3-py3-none-any.whl", hash = "sha256:533bd686c2277369215db15a017d7d2db056a7c6ecf7c801138aa32d3a4d9e98"},
+    {file = "satori_python_adapter_qq-0.4.3.tar.gz", hash = "sha256:0110130cc89980d7ff8c5eaf173307bcc6c031aa6f014745626621495cb56761"},
 ]
 
 [[package]]
@@ -3003,24 +3021,6 @@ files = [
 ]
 
 [[package]]
-name = "textual"
-version = "3.7.1"
-requires_python = "<4.0.0,>=3.8.1"
-summary = "Modern Text User Interface framework"
-groups = ["dev"]
-marker = "python_version >= \"3.11\" and python_version < \"3.14\""
-dependencies = [
-    "markdown-it-py[linkify,plugins]>=2.1.0",
-    "platformdirs<5,>=3.6.0",
-    "rich>=13.3.3",
-    "typing-extensions<5.0.0,>=4.4.0",
-]
-files = [
-    {file = "textual-3.7.1-py3-none-any.whl", hash = "sha256:ab5d153f4f65e77017977fa150d0376409e0acf5f1d2e25e2e4ab9de6c0d61ff"},
-    {file = "textual-3.7.1.tar.gz", hash = "sha256:a76ba0c8a6c194ef24fd5c3681ebfddca55e7127c064a014128c84fbd7f5d271"},
-]
-
-[[package]]
 name = "tiktoken"
 version = "0.13.0"
 requires_python = ">=3.9"
@@ -3170,7 +3170,7 @@ name = "uc-micro-py"
 version = "2.0.0"
 requires_python = ">=3.10"
 summary = "Micro subset of unicode data files for linkify-it-py projects."
-groups = ["browser", "dev"]
+groups = ["browser"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 files = [
     {file = "uc_micro_py-2.0.0-py3-none-any.whl", hash = "sha256:3603a3859af53e5a39bc7677713c78ea6589ff188d70f4fee165db88e22b242c"},

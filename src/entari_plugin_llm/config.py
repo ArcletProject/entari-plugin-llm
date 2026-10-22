@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from arclet.entari import BasicConfModel, plugin_config
 from arclet.entari.config import model_field
@@ -6,6 +6,38 @@ from arclet.entari.config import model_field
 from ._jsondata import get_default_model
 from .exception import ModelNotFoundError
 from .log import log
+
+
+class SkillConfig(BasicConfModel):
+    name: str
+    """技能名称，或包含 SKILL.md 的目录路径"""
+    mode: Literal["auto", "always"] = "auto"
+    """auto: 由模型按需加载；always: 直接注入系统提示，适合输出格式约束"""
+
+
+SkillRef = str | SkillConfig
+
+
+def _coerce_skill_refs(value: list[SkillRef] | None) -> list[SkillRef] | None:
+    if value is None:
+        return None
+
+    result: list[SkillRef] = []
+    for item in value:
+        if isinstance(item, SkillConfig):
+            skill = item
+        elif isinstance(item, str):
+            result.append(item)
+            continue
+        elif isinstance(item, dict):
+            skill = SkillConfig(**item)
+        else:
+            raise TypeError("skills entries must be a name, path, or {name, mode} object")
+
+        if skill.mode not in {"auto", "always"}:
+            raise ValueError(f"Skill {skill.name!r} has invalid mode {skill.mode!r}")
+        result.append(skill)
+    return result
 
 
 class ScopedModel(BasicConfModel):
@@ -24,8 +56,13 @@ class ScopedModel(BasicConfModel):
     """OpenAI API 的接口地址。如果未设置，则回退到全局 base_url"""
     prompt: str = ""
     """该模型使用的提示词。如果未设置，则回退到全局 prompt"""
+    skills: list[SkillRef] | None = None
+    """该模型启用的技能。None 表示继承全局配置，空列表表示显式关闭"""
     extra: dict[str, Any] = model_field(default_factory=dict)
     """传递给 LLM API 调用的额外参数"""
+
+    def __post_init__(self):
+        self.skills = _coerce_skill_refs(self.skills)
 
 
 class Config(BasicConfModel, extra="allow"):
@@ -35,6 +72,8 @@ class Config(BasicConfModel, extra="allow"):
     """OpenAI API 的全局接口地址。用作没有特定接口地址的模型的后备"""
     prompt: str = ""
     """全局提示词。用作没有特定提示词的模型的后备"""
+    skills: list[SkillRef] = model_field(default_factory=list)
+    """全局启用的技能。模型未单独配置 skills 时继承此列表"""
     models: list[ScopedModel] = model_field(default_factory=list)
     """配置模型及其各自设置的列表"""
     tools: dict[str, dict[str, Any]] = model_field(default_factory=dict)
@@ -79,6 +118,7 @@ class Config(BasicConfModel, extra="allow"):
         self.tools = loaded_tools
 
     def __post_init__(self):
+        self.skills = _coerce_skill_refs(self.skills) or []
         self._reload_tools()
 
 
@@ -108,6 +148,7 @@ def get_model_config(model_name: str | None = None, channel: str = "$default") -
             api_key=model.api_key,
             base_url=model.base_url,
             prompt=model.prompt,
+            skills=model.skills,
             extra=model.extra,
         )
         if not model.api_key and _conf.api_key:

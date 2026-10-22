@@ -6,7 +6,7 @@ from arclet.entari import Image, MessageChain, Text
 from arclet.letoderea import Contexts, waterfall
 from entari_plugin_user import UserSession  # entari: plugin
 
-from ._capabilities import supports_vision
+from .capabilities import supports_vision
 from .config import get_model_config
 from .event import LLMCollectVariableEvent
 from .service import llm

@@ -13,8 +13,9 @@ from arclet.letoderea import Contexts
 from launart import Launart, Service
 from launart.status import Phase
 
-from ._capabilities import supports_vision
-from ._pricing import resolve_metrics_cost
+from .capabilities import supports_vision
+from .pricing import resolve_metrics_cost
+from .skills import apply_skills, resolve_selections
 from .config import ScopedModel, _conf, get_model_config
 from .model_factory import create_model
 from .response import GenericResponse
@@ -182,6 +183,8 @@ class LLMService(Service):
             )
             instructions = f"{instructions}\n\n{variable_instructions}" if instructions else variable_instructions
 
+        instructions, agent_skills = apply_skills(instructions, resolve_selections(model_config, _conf.skills))
+
         model_request_params = request_params or None
         agno_model = create_model(model_config, request_params=model_request_params)
 
@@ -192,6 +195,8 @@ class LLMService(Service):
             "tools": tools,
             "markdown": False,
         }
+        if agent_skills is not None:
+            agent_kwargs["skills"] = agent_skills
         if output is not None:
             agent_kwargs["output_schema"] = output if output != "json_object" else {"type": "object"}
             agent_kwargs["use_json_mode"] = True

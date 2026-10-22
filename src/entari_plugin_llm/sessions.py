@@ -17,7 +17,7 @@ from ._jsondata import (
     set_current_session,
     set_session_model,
 )
-from ._pricing import resolve_metrics_cost
+from .pricing import resolve_metrics_cost
 from .config import get_model_config, get_model_list
 from .exception import NewSessionExistsError
 

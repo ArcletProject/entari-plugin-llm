@@ -50,14 +50,17 @@ plugins:
   entari_plugin_llm:
     api_key: ${{ env.get('OPENAI_API_KEY', None) }}
     base_url: https://api.openai.com/v1
+    skills:
+      - name: satori-output
+        mode: always
     models:
 #      - name: "deepseek/deepseek-v3"
 #        alias: "deepseek-v3"
 #        api_key: ${{ env.BAILIAN_API_KEY }}
 #        base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-      - name: "deepseek/deepseek-chat"
-        api_key: ${{ env.DEEPSEEK_API_KEY }}
-        base_url: https://api.deepseek.com
+#      - name: "deepseek/deepseek-chat"
+#        api_key: ${{ env.DEEPSEEK_API_KEY }}
+#        base_url: https://api.deepseek.com
       - name: "deepseek/deepseek-flash"
         alias: "deepseek-flash"
         api_key: ${{ env.DEEPSEEK_API_KEY }}
@@ -73,9 +76,9 @@ plugins:
       ::plugin_manager: {}
       ::agno.tools.calculator.CalculatorTools: {}
       ::agno.tools.exa.ExaTools:
-        $call_limit: 2
+        $call_limit: 4
         # https://docs.agno.com/tools/toolkits/search/exa
-        api_key: ''
+        api_key: ${{ env.EXA_API_KEY }}
         enable_search: true
         enable_get_contents: true
         enable_find_similar: true
