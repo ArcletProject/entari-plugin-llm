@@ -3,6 +3,7 @@ from pathlib import Path
 
 from arclet.entari import Session, local_data, plugin
 from arclet.entari.config import BasicConfModel
+
 from entari_plugin_llm import register_tool
 from entari_plugin_llm.builtins.tools.generic import detect_superuser
 
@@ -191,7 +192,7 @@ async def visit_plugin(session: Session, plugin_id: str) -> str:
         path = Path(plg.module.__file__).absolute()  # type: ignore
         if not path.exists():
             return f"插件 {plugin_id} 的源代码文件未找到"
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             content = f.read()
         return content
     except Exception as e:

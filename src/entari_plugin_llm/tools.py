@@ -373,5 +373,3 @@ def get_agno_tools() -> tuple[list[Toolkit | Function], ToolExecutors]:
         executors[name] = (execute, fn)
         tools.append(fn)
     return tools, executors
-
-

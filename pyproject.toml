@@ -1,6 +1,6 @@
 [project]
 name = "entari-plugin-llm"
-version = "0.3.0"
+version = "0.4.0"
 description = "An Entari Plugin for LLM Chat with Function Call"
 authors = [
     {"name" = "RF-Tar-Railt", "email" = "rf_tar_railt@qq.com"},
@@ -74,7 +74,7 @@ dev = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 include = ["src/entari_plugin_llm/**/*.py"]
 
 [tool.ruff.lint]
@@ -82,7 +82,7 @@ select = ["E", "W", "F", "UP", "C", "T", "PYI", "PT", "Q", "I"]
 ignore = ["C901", "T201", "E731", "E402", "PYI055"]
 
 [tool.pyright]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 pythonPlatform = "All"
 typeCheckingMode = "basic"
 

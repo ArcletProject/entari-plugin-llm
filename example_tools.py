@@ -39,7 +39,7 @@ async def ask_user_for_argument(session: Session, prompt: str, timeout: int = 12
 @register_tool(stop_after_tool_call=True)
 async def split_answer_send(session: Session, answers: list[str], delays: list[float]):
     """
-    将拆分的多段回答发送给用户
+    将拆分的多段回答发送给用户, 最多 5 段, 每段发送后等待指定的间隔时间
 
     注意：该工具应当在最后一步调用。调用完成后，LLM 不应再返回任何内容。
 

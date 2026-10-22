@@ -26,6 +26,8 @@ basic:
   superusers:
     onebot:
       - ${{ env.SUPERUSER }}
+    qq:
+      - ${{ env.MASTER_QQ_OPENID }}
 plugins:
   $prelude:
     - ::auto_reload
@@ -74,6 +76,7 @@ plugins:
     tools:
       ::generic: {}
       ::plugin_manager: {}
+      ::webpage_processor: {}
       ::agno.tools.calculator.CalculatorTools: {}
       ::agno.tools.exa.ExaTools:
         $call_limit: 4
@@ -107,3 +110,13 @@ adapters:
     endpoint: ws
 #  - $path: '@console'
 #    logger_id: "$logger_id"
+  - $path: '@qq.websocket'
+    app_id: ${{ env.QQ_APP_ID }}
+    secret: ${{ env.QQ_SECRET }}
+    intent:
+      guild_messages: true
+      direct_message: true
+      message_audit: true
+      at_messages: false
+      c2c_group_at_messages: true
+    is_sandbox: false
