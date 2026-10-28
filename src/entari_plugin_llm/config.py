@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from arclet.entari import BasicConfModel, plugin_config
+from arclet.entari import BasicConfModel, Session, plugin_config
 from arclet.entari.config import model_field
 
 from ._jsondata import get_default_model
@@ -65,6 +65,15 @@ class ScopedModel(BasicConfModel):
         self.skills = _coerce_skill_refs(self.skills)
 
 
+class Chance:
+    value: float
+    """概率值，范围为 0 到 1"""
+    platform: str
+    """适用的平台，如 "qq"、"wechat"、"discord" 等。"""
+    channel: list[str]
+    """适用的频道列表。['*'] 表示所有频道。"""
+
+
 class Config(BasicConfModel, extra="allow"):
     api_key: str | None = None
     """用于使用 OpenAI API 进行身份验证的全局 API 密钥。用作没有特定键的模型的后备"""
@@ -84,6 +93,8 @@ class Config(BasicConfModel, extra="allow"):
     """群聊中最多携带多少条最近消息作为上下文。群聊按频道共享会话，0 表示关闭"""
     max_tool_calls_from_history: int | None = None
     """限制历史上下文中的工具调用数量。如果未设置，则没有限制"""
+    chance_of_full_chat: float | list[Chance] = 0.5
+    """在群聊中，触发完整对话的概率。0 表示关闭，1 表示总是触发完整对话"""
 
     def _reload_tools(self):
         loaded_tools: dict[str, dict[str, Any]] = {}
@@ -124,6 +135,18 @@ class Config(BasicConfModel, extra="allow"):
             raise ValueError("group_context_limit must be a non-negative integer")
         self.skills = _coerce_skill_refs(self.skills) or []
         self._reload_tools()
+
+    def get_chance_of(self, session: Session):
+        if isinstance(self.chance_of_full_chat, (float, int)):
+            return self.chance_of_full_chat
+        if not session.event.channel:
+            return 0.0
+        chance = next((c for c in self.chance_of_full_chat if c.platform == session.account.platform), None)
+        if not chance:
+            return 0.0
+        if "*" in chance.channel or session.event.channel.id in chance.channel:
+            return chance.value
+        return 0.0
 
 
 _conf = plugin_config(Config)

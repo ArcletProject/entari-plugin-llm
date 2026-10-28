@@ -1,6 +1,7 @@
+import random
 from collections import deque
 
-from arclet.entari import ChannelType, MessageChain, MessageCreatedEvent, Session, filter_, metadata
+from arclet.entari import ChannelType, MessageChain, MessageCreatedEvent, Session, metadata
 from arclet.entari.config import config_model_keys, config_model_validate
 from arclet.entari.event.config import ConfigReload
 from arclet.entari.event.send import SendResponse
@@ -50,12 +51,17 @@ async def buffer_group_message(session: Session, event: MessageCreatedEvent):
     )
 
 
-@on(MessageCreatedEvent, priority=1000, label="AI-对话").if_(filter_.to_me)
-async def run_conversation(session: UserSession, ctx: Contexts):
+@on(MessageCreatedEvent, priority=1000, label="AI-对话")
+async def run_conversation(session: UserSession, ctx: Contexts, is_reply_me: bool = False, is_notice_me: bool = False):
     """利用 LLM 进行对话"""
     if session.internal.event.sn in RECORD:
         return BLOCK
-
+    if is_reply_me or is_notice_me:
+        pass
+    elif random.random() < _conf.get_chance_of(session.session):
+        pass
+    else:
+        return BLOCK
     try:
         answer = await LLMSessionManager.chat(
             session.elements,
