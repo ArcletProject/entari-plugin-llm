@@ -190,6 +190,21 @@ entari_plugin_llm:
 
 注意：`always` 只是把指令放进系统提示，仍然是提示词约束，不是 XML Schema 校验。如果 XML 需要被程序严格解析，建议继续使用 structured output 生成数据，再自行序列化为 XML，或对模型输出做校验与重试。
 
+### 群聊会话
+
+在群聊（`ChannelType.TEXT`）中，会话所有者是 `平台:频道ID` 而不是单个用户，因此同一频道的所有成员共享同一个会话、同一个模型设置和同一份历史。私聊仍然按用户隔离。
+
+```yaml
+entari_plugin_llm:
+  # 作为上下文携带的最近群聊消息条数，0 关闭
+  group_context_limit: 10
+```
+
+- 同一频道的消息按到达顺序串行处理（followup）：前一条消息跑完 Agent 后才开始下一条。
+- 群聊上下文只保存在内存中，进程重启后清空；已经进入会话历史的消息不会重复注入。
+- 群聊中的 `/llm session @某人` 会忽略被 @ 的用户，始终显示当前频道的会话。
+- 受适配器限制：QQ 官方接口只推送被 @ 的消息，OneBot 等适配器才能拿到完整群聊记录。
+
 ### 额外参数
 
 `extra` 中的键如果与适配器的构造字段同名（如 `temperature`、`max_tokens`、`reasoning_effort`），会作为构造参数传入；其余键会合并进 `request_params`。运行时通过 `llm.generate(..., temperature=0.3)` 传入的参数优先级最高。

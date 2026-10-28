@@ -61,14 +61,14 @@ litellm = [
 [dependency-groups]
 dev = [
     "arclet.entari[yaml,cron,reload,dotenv]>=0.19.2",
-    "entari-plugin-server>=0.7.1",
-    "satori-python-adapter-onebot11>=0.4.2",
+    "entari-plugin-server>=0.8.2",
+    "satori-python-adapter-onebot11>=0.5.0",
     "ruff>=0.14.10",
     "ddgs>=9.11.2",
     "satori-python-adapter-milky>=0.3.1",
     "litellm[mcp]>=1.106.0",
     "genai-prices>=0.1.13",
-    "satori-python-adapter-qq>=0.4.3",
+    "satori-python-adapter-qq>=0.6.2",
     "exa-py>=2.26.0",
 ]
 

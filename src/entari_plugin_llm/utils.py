@@ -6,7 +6,7 @@ from satori import At
 from ._jsondata import get_default_model
 from .config import _conf
 from .manager import LLMSessionManager
-from .sessions import SessionInfo
+from .sessions import SessionInfo, resolve_session_owner
 
 
 def _parse_session_id(choice: str, rows: Sequence[SessionInfo]) -> str | None:
@@ -56,8 +56,16 @@ async def resolve_user_id(session: UserSession, target: str | At | None = None) 
     return user.id
 
 
+async def resolve_owner(session: UserSession, target: str | At | None = None) -> int | str:
+    """解析会话所有者。群聊中忽略 target，始终指向频道共享会话。"""
+    owner = resolve_session_owner(session)
+    if isinstance(owner, str):
+        return owner
+    return await resolve_user_id(session, target)
+
+
 async def select_session(session: UserSession) -> str | None:
-    rows = await LLMSessionManager.list_sessions(session.user_id)
+    rows = await LLMSessionManager.list_sessions(resolve_session_owner(session))
     if not rows:
         await session.send("暂无会话")
         return None

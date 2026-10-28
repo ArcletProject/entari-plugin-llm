@@ -8,6 +8,8 @@ from uuid import uuid4
 from agno.db.base import SessionType
 from agno.db.sqlite import AsyncSqliteDb
 from agno.session.agent import AgentSession
+from arclet.entari import ChannelType
+from entari_plugin_user import UserSession  # entari: plugin
 
 from ._jsondata import (
     clear_current_session,
@@ -22,10 +24,18 @@ from .exception import NewSessionExistsError
 from .pricing import resolve_metrics_cost
 
 
+def resolve_session_owner(session: UserSession) -> int | str:
+    """群聊按平台与频道共享会话，私聊仍然按用户隔离。"""
+    if session.channel_type == ChannelType.TEXT:
+        return f"{session.platform}:{session.channel.id}"
+    return session.user_id
+
+
 @dataclass(frozen=True, slots=True)
 class SessionInfo:
     session_id: str
-    user_id: int
+    user_id: int | str
+    """会话所有者：私聊为用户 ID，群聊为 ``platform:channel_id``"""
     topic: str
     model: str
     is_active: bool
@@ -43,7 +53,7 @@ class AgnoSessionStore:
         self.db = db
         self.agent_id = agent_id
 
-    async def create(self, user_id: int, model: str) -> SessionInfo:
+    async def create(self, user_id: int | str, model: str) -> SessionInfo:
         current_session = await self.current(user_id)
         if current_session is not None and current_session.message_count == 0:
             raise NewSessionExistsError("当前已处于新会话当中")
@@ -54,7 +64,7 @@ class AgnoSessionStore:
         set_session_model(session_id, model)
         return self._pending_info(user_id, session_id, created_at, model)
 
-    async def current(self, user_id: int) -> SessionInfo | None:
+    async def current(self, user_id: int | str) -> SessionInfo | None:
         pointer = get_current_session(user_id)
         if pointer is not None:
             session = await self.db.get_session(
@@ -78,7 +88,7 @@ class AgnoSessionStore:
         set_current_session(user_id, session.session_id, session.created_at or int(time.time()))
         return self._to_info(session, user_id, session.session_id)
 
-    async def list(self, user_id: int) -> list[SessionInfo]:
+    async def list(self, user_id: int | str) -> list[SessionInfo]:
         pointer = get_current_session(user_id)
         current_id = pointer.session_id if pointer is not None else None
         sessions = await self._get_user_sessions(user_id)
@@ -95,7 +105,7 @@ class AgnoSessionStore:
             )
         return result
 
-    async def activate(self, user_id: int, session_id: str) -> bool:
+    async def activate(self, user_id: int | str, session_id: str) -> bool:
         pointer = get_current_session(user_id)
         if pointer is not None and pointer.session_id == session_id:
             return True
@@ -106,14 +116,14 @@ class AgnoSessionStore:
         set_current_session(user_id, session_id, session.created_at or int(time.time()))
         return True
 
-    async def set_model(self, user_id: int, model: str) -> bool:
+    async def set_model(self, user_id: int | str, model: str) -> bool:
         session = await self.current(user_id)
         if session is None:
             return False
         set_session_model(session.session_id, model)
         return True
 
-    async def delete(self, user_id: int, session_id: str) -> bool:
+    async def delete(self, user_id: int | str, session_id: str) -> bool:
         pointer = get_current_session(user_id)
         is_current = pointer is not None and pointer.session_id == session_id
         agno_user_id = str(user_id)
@@ -132,7 +142,7 @@ class AgnoSessionStore:
                 clear_current_session(user_id)
         return deleted
 
-    async def _get_user_sessions(self, user_id: int) -> list[AgentSession]:
+    async def _get_user_sessions(self, user_id: int | str) -> list[AgentSession]:
         rows = await self.db.get_sessions(
             session_type=SessionType.AGENT,
             user_id=str(user_id),
@@ -144,7 +154,7 @@ class AgnoSessionStore:
             rows = rows[0]
         return [session for session in rows if isinstance(session, AgentSession)]
 
-    def _to_info(self, session: AgentSession, user_id: int, current_id: str | None) -> SessionInfo:
+    def _to_info(self, session: AgentSession, user_id: int | str, current_id: str | None) -> SessionInfo:
         summary = session.summary
         summary_text = summary.summary.strip() if summary and summary.summary else None
         if summary and summary.topics:
@@ -205,7 +215,7 @@ class AgnoSessionStore:
         return ""
 
     @staticmethod
-    def _pending_info(user_id: int, session_id: str, created_at: int, model: str) -> SessionInfo:
+    def _pending_info(user_id: int | str, session_id: str, created_at: int, model: str) -> SessionInfo:
         return SessionInfo(
             session_id=session_id,
             user_id=user_id,

@@ -24,7 +24,7 @@ basic:
   external_dirs:
     - src
   superusers:
-    onebot:
+    qq-client:
       - ${{ env.SUPERUSER }}
     qq:
       - ${{ env.MASTER_QQ_OPENID }}

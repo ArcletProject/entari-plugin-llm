@@ -1,6 +1,6 @@
 from collections import deque
 
-from arclet.entari import MessageChain, MessageCreatedEvent, filter_, metadata
+from arclet.entari import ChannelType, MessageChain, MessageCreatedEvent, Session, filter_, metadata
 from arclet.entari.config import config_model_keys, config_model_validate
 from arclet.entari.event.config import ConfigReload
 from arclet.entari.event.send import SendResponse
@@ -9,6 +9,7 @@ from arclet.letoderea.context import Contexts
 from entari_plugin_user import UserSession  # entari: plugin
 
 from ..config import Config, _conf
+from ..context import group_context
 from ..exception import ModelNotFoundError
 from ..manager import LLMSessionManager
 from ..tools import load_tools
@@ -33,7 +34,23 @@ async def _record(event: SendResponse):
         RECORD.append(event.session.event.sn)
 
 
-@on(MessageCreatedEvent, priority=1000, label="AI 对话").if_(filter_.to_me)
+@on(MessageCreatedEvent, priority=2, label="群聊上下文缓存")
+async def buffer_group_message(session: Session, event: MessageCreatedEvent):
+    """记录群聊消息，供后续对话作为上下文使用"""
+    if _conf.group_context_limit <= 0 or session.channel.type != ChannelType.TEXT:
+        return
+
+    sender = (event.member.nick if event.member else None) or (event.user.nick or event.user.name or event.user.id)
+    sender = sender if sender == event.user.id else f"{sender}({event.user.id})"
+    group_context.record(
+        f"{session.account.platform}:{session.channel.id}",
+        message_id=event.message.id,
+        sender=sender,
+        text=session.content,
+    )
+
+
+@on(MessageCreatedEvent, priority=1000, label="AI-对话").if_(filter_.to_me)
 async def run_conversation(session: UserSession, ctx: Contexts):
     """利用 LLM 进行对话"""
     if session.internal.event.sn in RECORD:

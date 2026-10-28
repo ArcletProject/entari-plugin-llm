@@ -693,18 +693,20 @@ files = [
 
 [[package]]
 name = "entari-plugin-server"
-version = "0.7.5"
-requires_python = ">=3.10"
+version = "0.8.2"
+requires_python = ">=3.11"
 summary = "Entari plugin for running Satori Server"
 groups = ["dev"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
-    "arclet-entari>=0.19.0rc1",
-    "satori-python-server<1.4.0,>=1.3.0",
+    "arclet-entari>=0.19.0.post2",
+    "satori-python-client<1.4.0,>=1.3.11",
+    "satori-python-core<1.4.0,>=1.3.11",
+    "satori-python-server<1.4.0,>=1.3.11",
 ]
 files = [
-    {file = "entari_plugin_server-0.7.5-py3-none-any.whl", hash = "sha256:b43ab7649675cc05bed405c7d0297fe8b13b00a2ad5e231e93860f76ae21bb8e"},
-    {file = "entari_plugin_server-0.7.5.tar.gz", hash = "sha256:bb5abf327eba84cf30ca3104177e53c1d60d5bcd35c2ea040150757e1896fe7d"},
+    {file = "entari_plugin_server-0.8.2-py3-none-any.whl", hash = "sha256:1cbb7297d03609bc09ac56e397868910af85c3d0b44cded5b1b4ed4981651039"},
+    {file = "entari_plugin_server-0.8.2.tar.gz", hash = "sha256:17b9f4f1fd8648e313febfafbae0e1e056f6b14b477de809d5a86f35f2d2f4a9"},
 ]
 
 [[package]]
@@ -2647,7 +2649,7 @@ files = [
 
 [[package]]
 name = "satori-python"
-version = "1.3.9.post1"
+version = "1.3.11"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python"
 groups = ["dev"]
@@ -2665,8 +2667,8 @@ dependencies = [
     "yarl>=1.9.4",
 ]
 files = [
-    {file = "satori_python-1.3.9.post1-py3-none-any.whl", hash = "sha256:1b6a6f8d504a1f07b1c29c4186a554dd111c2e7541b1e5f624338ac410091af2"},
-    {file = "satori_python-1.3.9.post1.tar.gz", hash = "sha256:4e255d441fda7ef3b21dd8cfe0e2120e5b6d331517c6ca356ee8ac364fb89f79"},
+    {file = "satori_python-1.3.11-py3-none-any.whl", hash = "sha256:df9e34e6a7a8db0b8a27019cbe44699c685d2f5b96667f472e7a83d58b877006"},
+    {file = "satori_python-1.3.11.tar.gz", hash = "sha256:1f87855480de1626ac65225bcc6c8867e148c95186d97a6280ca2e7f41e0cc0a"},
 ]
 
 [[package]]
@@ -2686,38 +2688,38 @@ files = [
 
 [[package]]
 name = "satori-python-adapter-onebot11"
-version = "0.5.0"
+version = "0.6.0"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, adapter for OneBot 11"
 groups = ["dev"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
-    "satori-python-server<1.4.0,>=1.3.7",
+    "satori-python-server<1.4.0,>=1.3.11",
 ]
 files = [
-    {file = "satori_python_adapter_onebot11-0.5.0-py3-none-any.whl", hash = "sha256:d9d52cf581152dff369f8833cb66a0b9349d0c6e6d796bd2f14db4e93ac020a9"},
-    {file = "satori_python_adapter_onebot11-0.5.0.tar.gz", hash = "sha256:2ffd70f2e25afa64d69715102e5392124fdf3b1c27a2ebddd57f30bf929f8d6b"},
+    {file = "satori_python_adapter_onebot11-0.6.0-py3-none-any.whl", hash = "sha256:6432ce7ff1355e71b233ecdf06e1895e297f72e4bfe3bbef8bf357c23277c2d0"},
+    {file = "satori_python_adapter_onebot11-0.6.0.tar.gz", hash = "sha256:99ef2ada5b750e9e7bdbe03d70d80ec05a891cba94c6530de7e802ba0febcfa0"},
 ]
 
 [[package]]
 name = "satori-python-adapter-qq"
-version = "0.4.3"
+version = "0.6.2"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, adapter for QQ"
 groups = ["dev"]
 marker = "python_version >= \"3.11\" and python_version < \"3.14\""
 dependencies = [
     "cryptography>=46.0.4",
-    "satori-python<1.4.0,>=1.3.7",
+    "satori-python<1.4.0,>=1.3.11",
 ]
 files = [
-    {file = "satori_python_adapter_qq-0.4.3-py3-none-any.whl", hash = "sha256:533bd686c2277369215db15a017d7d2db056a7c6ecf7c801138aa32d3a4d9e98"},
-    {file = "satori_python_adapter_qq-0.4.3.tar.gz", hash = "sha256:0110130cc89980d7ff8c5eaf173307bcc6c031aa6f014745626621495cb56761"},
+    {file = "satori_python_adapter_qq-0.6.2-py3-none-any.whl", hash = "sha256:9f0fec6bbf88f593dafa244da405eb9aeb523fea9e123a0ad5c8052fa2d88970"},
+    {file = "satori_python_adapter_qq-0.6.2.tar.gz", hash = "sha256:fc066a7670309c0ec850351deaf994df6a4e63d04a90213d58418e287fc56dd2"},
 ]
 
 [[package]]
 name = "satori-python-client"
-version = "1.3.7"
+version = "1.3.11"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, specify client part"
 groups = ["default", "browser", "dev"]
@@ -2727,17 +2729,17 @@ dependencies = [
     "graia-amnesia>=0.11.0",
     "launart>=0.8.2",
     "loguru>=0.7.2",
-    "satori-python-core<1.4.0,>=1.3.6",
+    "satori-python-core<1.4.0,>=1.3.11",
     "yarl>=1.9.4",
 ]
 files = [
-    {file = "satori_python_client-1.3.7-py3-none-any.whl", hash = "sha256:748470043b23f8585b894b36d3d333a6b92759da47b99069c0f9c3edc078505d"},
-    {file = "satori_python_client-1.3.7.tar.gz", hash = "sha256:94343cd06d00a23bf5951c9f5c25efe43aec25c7a49e3ef521ce603e3207a7a9"},
+    {file = "satori_python_client-1.3.11-py3-none-any.whl", hash = "sha256:390e6b024d572f768131281db50f25ce3ae17cfa495985bfbfc12b8dd2049206"},
+    {file = "satori_python_client-1.3.11.tar.gz", hash = "sha256:5015efa3f2a0e3f4182620f50b2f4170547c98496e832af164d326fa854d072d"},
 ]
 
 [[package]]
 name = "satori-python-core"
-version = "1.3.9.post1"
+version = "1.3.11"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, specify common part"
 groups = ["default", "browser", "dev"]
@@ -2746,13 +2748,13 @@ dependencies = [
     "typing-extensions>=4.7.0",
 ]
 files = [
-    {file = "satori_python_core-1.3.9.post1-py3-none-any.whl", hash = "sha256:4c0f6a3d9cb455f695473ed78fb8ffdd78e8d485c184baae8b9d82d0a2c2449c"},
-    {file = "satori_python_core-1.3.9.post1.tar.gz", hash = "sha256:61058ef4357f6c687d7dccb61bba031d1a44a7e988c57a0ca897ad5a64b4de5c"},
+    {file = "satori_python_core-1.3.11-py3-none-any.whl", hash = "sha256:05e796df4b548667d9b12dcebb3b8f2bb8d3b6c43ef2a3fa7a066d931af32eab"},
+    {file = "satori_python_core-1.3.11.tar.gz", hash = "sha256:3a13537f80dae47cee4800642741a2947ccce1b471b6bb18fbbf88238f55a76b"},
 ]
 
 [[package]]
 name = "satori-python-server"
-version = "1.3.7"
+version = "1.3.11"
 requires_python = "<4.0,>=3.10"
 summary = "Satori Protocol SDK for python, specify server part"
 groups = ["dev"]
@@ -2763,14 +2765,14 @@ dependencies = [
     "launart>=0.8.2",
     "loguru>=0.7.2",
     "python-multipart>=0.0.9",
-    "satori-python-core<1.4.0,>=1.3.6",
+    "satori-python-core<1.4.0,>=1.3.11",
     "starlette>=0.40.0",
     "websockets>=15.0.1",
     "yarl>=1.9.4",
 ]
 files = [
-    {file = "satori_python_server-1.3.7-py3-none-any.whl", hash = "sha256:a5fc16320c673120cb4d6a985ffaf84ba228a30eff00d221af7ef22af568d6de"},
-    {file = "satori_python_server-1.3.7.tar.gz", hash = "sha256:97c1f75a1037a1a5dd2ed33a5a38738015c58d1f133dad1621c4f5c419598182"},
+    {file = "satori_python_server-1.3.11-py3-none-any.whl", hash = "sha256:b9d9b60525e0641f3a227ef10632d4901bcf4b23227d9200abe08593921e841c"},
+    {file = "satori_python_server-1.3.11.tar.gz", hash = "sha256:70dee193fb6807102c553dc4e210e1b00baa433935f359d7b8eec80009f2ba0d"},
 ]
 
 [[package]]

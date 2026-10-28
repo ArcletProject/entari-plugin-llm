@@ -80,6 +80,8 @@ class Config(BasicConfModel, extra="allow"):
     """工具"""
     history_limit: int | None = None
     """限制每个用户的历史会话数量。如果未设置，则没有限制"""
+    group_context_limit: int = 10
+    """群聊中最多携带多少条最近消息作为上下文。群聊按频道共享会话，0 表示关闭"""
     max_tool_calls_from_history: int | None = None
     """限制历史上下文中的工具调用数量。如果未设置，则没有限制"""
 
@@ -118,6 +120,8 @@ class Config(BasicConfModel, extra="allow"):
         self.tools = loaded_tools
 
     def __post_init__(self):
+        if self.group_context_limit < 0:
+            raise ValueError("group_context_limit must be a non-negative integer")
         self.skills = _coerce_skill_refs(self.skills) or []
         self._reload_tools()
 

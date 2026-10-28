@@ -9,7 +9,7 @@ from .._jsondata import set_default_model
 from ..config import get_model_config, get_model_list
 from ..exception import ModelNotFoundError, NewSessionExistsError
 from ..manager import LLMSessionManager
-from ..utils import render_model_list, render_session_list, resolve_user_id, select_session
+from ..utils import render_model_list, render_session_list, resolve_owner, resolve_session_owner, select_session
 
 metadata(
     name="LLM 指令",
@@ -58,7 +58,7 @@ llm_disp = command.mount(llm_alc, skip_for_unmatch=False)
 @llm_disp.assign("new_cmd")
 async def _(session: UserSession):
     try:
-        new_session = await LLMSessionManager.create_new_session(session.user_id)
+        new_session = await LLMSessionManager.create_new_session(resolve_session_owner(session))
     except NewSessionExistsError as e:
         await session.send(str(e))
         return BLOCK
@@ -76,7 +76,7 @@ async def _(session: UserSession, session_id: command.Match[str]):
 
         session_id.result = selected
 
-    switched = await LLMSessionManager.switch(session.user_id, session_id.result)
+    switched = await LLMSessionManager.switch(resolve_session_owner(session), session_id.result)
     await session.send("切换成功" if switched else "未找到对应会话")
     return BLOCK
 
@@ -89,15 +89,16 @@ async def _(session: UserSession, session_id: command.Match[str]):
             return BLOCK
 
         session_id.result = selected
-    info = await LLMSessionManager.get_current_session_info(session.user_id)
-    deleted = await LLMSessionManager.delete(session.user_id, session_id.result)
+    owner = resolve_session_owner(session)
+    info = await LLMSessionManager.get_current_session_info(owner)
+    deleted = await LLMSessionManager.delete(owner, session_id.result)
     if deleted:
-        rows = await LLMSessionManager.list_sessions(session.user_id)
+        rows = await LLMSessionManager.list_sessions(owner)
         if not rows:
-            await LLMSessionManager.create_new_session(session.user_id)
+            await LLMSessionManager.create_new_session(owner)
             await session.send("删除成功，已自动创建新会话")
         elif info and info["session_id"] == session_id.result:
-            switched = await LLMSessionManager.switch(session.user_id, rows[0].session_id)
+            switched = await LLMSessionManager.switch(owner, rows[0].session_id)
             await session.send("删除成功，已切换到最近的会话" if switched else "删除成功，但未找到对应会话")
         else:
             await session.send("删除成功，当前会话列表：\n" + render_session_list(rows))
@@ -109,7 +110,7 @@ async def _(session: UserSession, session_id: command.Match[str]):
 @llm_disp.assign("session.list")
 async def _(session: UserSession, user_id: command.Match[str | At]):
     target = user_id.result if user_id.available else None
-    rows = await LLMSessionManager.list_sessions(await resolve_user_id(session, target))
+    rows = await LLMSessionManager.list_sessions(await resolve_owner(session, target))
 
     if not rows:
         await session.send("暂无会话")
@@ -122,7 +123,7 @@ async def _(session: UserSession, user_id: command.Match[str | At]):
 @llm_disp.assign("session", priority=20)
 async def _(session: UserSession, user_id: command.Match[str | At]):
     target = user_id.result if user_id.available else None
-    info = await LLMSessionManager.get_current_session_info(await resolve_user_id(session, target))
+    info = await LLMSessionManager.get_current_session_info(await resolve_owner(session, target))
     if info is None:
         await session.send("当前没有活动会话")
         return BLOCK
@@ -148,7 +149,7 @@ async def _(session: UserSession, user_id: command.Match[str | At]):
 
 @llm_disp.assign("model.list")
 async def _(session: UserSession):
-    info = await LLMSessionManager.get_current_session_info(session.user_id)
+    info = await LLMSessionManager.get_current_session_info(resolve_session_owner(session))
     current_model = info["model"] if info else None
     await session.send(render_model_list(current_model, session.channel.id))
     return BLOCK
@@ -156,9 +157,10 @@ async def _(session: UserSession):
 
 @llm_disp.assign("model", priority=20)
 async def _(session: UserSession, model: command.Match[str]):
+    owner = resolve_session_owner(session)
     if model.available:
         if model.result not in get_model_list():
-            info = await LLMSessionManager.get_current_session_info(session.user_id)
+            info = await LLMSessionManager.get_current_session_info(owner)
             current_model = info["model"] if info else None
             await session.send(render_model_list(current_model, session.channel.id))
             return BLOCK
@@ -166,12 +168,12 @@ async def _(session: UserSession, model: command.Match[str]):
         conf = get_model_config(model.result, session.channel.id)
         set_default_model(conf.name, session.channel.id)
 
-        if await LLMSessionManager.select_model(session.user_id, conf.name):
+        if await LLMSessionManager.select_model(owner, conf.name):
             await session.send(f"已切换当前会话使用的模型为: {model.result}")
         else:
             await session.send(f"已切换默认模型为: {model.result}")
         return BLOCK
-    info = await LLMSessionManager.get_current_session_info(session.user_id)
+    info = await LLMSessionManager.get_current_session_info(owner)
     current_model = info["model"] if info else None
     await session.send(render_model_list(current_model, session.channel.id))
     return BLOCK
