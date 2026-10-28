@@ -68,8 +68,7 @@ async def run_conversation(session: UserSession, ctx: Contexts, is_reply_me: boo
             session=session,
             ctx=ctx,
         )
-        if answer != "[END_OF_RESPONSE]":
-            await session.send(answer)
+        await LLMSessionManager.send_answer(session, answer, ctx)
     except ModelNotFoundError as e:
         await session.send(MessageChain(str(e)))
     except Exception as e:

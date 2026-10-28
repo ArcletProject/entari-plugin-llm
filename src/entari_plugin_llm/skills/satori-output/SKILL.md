@@ -231,3 +231,13 @@ Platforms may provide native message elements, but they must be prefixed with th
 ```html
 <milky:face id="123" />
 ```
+
+### Extension Attributes on Standard Elements
+
+Platform-native attributes for standard elements can also be declared by prefixing them with the adapter name. For example:
+
+```html
+<!-- src is a standard attribute of the image element. -->
+<!-- sub-type is not standardized, so it needs a prefix. -->
+<img src="url1" milky:sub-type="sticker"/>
+```

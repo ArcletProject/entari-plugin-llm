@@ -214,7 +214,7 @@ async def main_chat(
             new=new_opt.result,
         )
         if answer != "[END_OF_RESPONSE]":
-            await session.send(answer)
+            await LLMSessionManager.send_answer(session, answer, ctx)
     except ModelNotFoundError as e:
         await session.send(MessageChain(str(e)))
     except Exception as e:

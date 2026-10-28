@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, TypeAlias
 
 from arclet.entari import MessageChain, MessageCreatedEvent, Session
@@ -14,6 +14,7 @@ class LLMCollectVariableEvent:
     session: Session
     llm_session: SessionInfo
     user_message: MessageChain
+    instructions: list[str] = field(default_factory=list)
 
     def check_result(self, value) -> Result[dict[str, Any]] | None:
         if isinstance(value, dict):
@@ -41,6 +42,38 @@ async def vars_gather(event: LLMCollectVariableEvent, context: Contexts):
 
 JSON_VALUE: TypeAlias = dict | list | str | int | float | bool | None
 JSON_TYPE: TypeAlias = dict[str, "JSON_TYPE"] | list["JSON_TYPE"] | JSON_VALUE
+
+
+@dataclass
+class LLMResponseEvent:
+    """LLM 回复发送前事件，可用于替换或拦截回复内容。"""
+
+    session: Session
+    llm_session: SessionInfo | None
+    message: MessageChain
+
+    def check_result(self, value) -> Result[MessageChain | bool] | None:
+        if isinstance(value, (MessageChain, bool)):
+            return Result(value)
+        return None
+
+
+response_pub = define(LLMResponseEvent, name="llm/response")
+response_pub.providers.extend(
+    [
+        provide(SessionInfo, call="$llm_session"),
+        provide(MessageChain, call="$response_message"),
+    ]
+)
+response_pub.providers.extend(get_providers(MessageCreatedEvent))
+
+
+@response_pub.gather
+async def response_gather(event: LLMResponseEvent, context: Contexts):
+    context[ITEM_ACCOUNT] = event.session.account
+    context[ITEM_SESSION] = event.session
+    context["$llm_session"] = event.llm_session
+    context["$response_message"] = event.message
 
 
 @dataclass

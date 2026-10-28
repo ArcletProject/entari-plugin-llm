@@ -11,7 +11,7 @@ from entari_plugin_user import UserSession  # entari: plugin
 from .capabilities import supports_vision
 from .config import _conf, get_model_config
 from .context import group_context
-from .event import LLMCollectVariableEvent
+from .event import LLMCollectVariableEvent, LLMResponseEvent
 from .locks import owner_lock_key, session_locks
 from .service import llm
 from .sessions import SessionInfo, resolve_session_owner
@@ -121,7 +121,13 @@ class LLMSessionManager:
             variables.update(result.value)
 
         response = await llm._generate_for_session(
-            [user_message], variables, llm_session=llm_session, model=selected_model, session=session.internal, ctx=ctx
+            [user_message],
+            variables,
+            llm_session=llm_session,
+            model=selected_model,
+            session=session.internal,
+            ctx=ctx,
+            extra_instructions=list(collect_event.instructions),
         )
         if response.stopped:
             final_answer = "[END_OF_RESPONSE]"
@@ -130,3 +136,25 @@ class LLMSessionManager:
         if not final_answer:
             return "对话失败，请稍后再试"
         return str(final_answer)
+
+    @classmethod
+    async def send_answer(cls, session: UserSession, answer: str, ctx: Contexts) -> None:
+        """发送 LLM 回复，允许插件通过 LLMResponseEvent 替换或拦截。"""
+        if not answer or answer == "[END_OF_RESPONSE]":
+            return
+
+        owner = resolve_session_owner(session)
+        info = await llm.session_store.current(owner)
+        try:
+            message = MessageChain.of(answer)
+        except Exception:
+            message = MessageChain(answer)
+
+        async for result in waterfall(LLMResponseEvent(session.internal, info, message), inherit_ctx=ctx):
+            value = result.value
+            if value is False:
+                return
+            if isinstance(value, MessageChain):
+                message = value
+
+        await session.send(message)

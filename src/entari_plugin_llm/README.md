@@ -205,6 +205,34 @@ entari_plugin_llm:
 - 群聊中的 `/llm session @某人` 会忽略被 @ 的用户，始终显示当前频道的会话。
 - 受适配器限制：QQ 官方接口只推送被 @ 的消息，OneBot 等适配器才能拿到完整群聊记录。
 
+### 扩展接口
+
+其他插件可以订阅对话流程事件来追加提示词或改写回复：
+
+```python
+from arclet.entari import plugin
+from entari_plugin_llm import LLMCollectVariableEvent, LLMResponseEvent
+
+collect = plugin.dispatch(LLMCollectVariableEvent)
+response = plugin.dispatch(LLMResponseEvent)
+
+
+@collect.on()
+async def add_instruction(event: LLMCollectVariableEvent):
+    # 直接修改事件字段并返回 None 即可，返回 dict 仍会作为变量注入
+    event.instructions.append("回答时优先使用短句。")
+
+
+@response.on()
+async def replace_reply(event: LLMResponseEvent):
+    # 返回 MessageChain 替换回复，返回 False 阻止发送，返回 None 保持原样
+    return event.message
+```
+
+- `LLMCollectVariableEvent` 提供 `session`、`llm_session`、`user_message`，其中 `instructions` 会拼接到本次系统提示词中。
+- `LLMResponseEvent.message` 是即将发送的 `MessageChain`；该事件在普通对话与 `/llm ask` 两条路径上都会触发。
+- 包顶层还导出了 `supports_vision`、`get_model_config`、`resolve_session_owner`、`SessionInfo`、`SessionLocks` 与 `owner_lock_key`，供外部插件判断视觉能力、读取模型配置或复用会话锁。
+
 ### 额外参数
 
 `extra` 中的键如果与适配器的构造字段同名（如 `temperature`、`max_tokens`、`reasoning_effort`），会作为构造参数传入；其余键会合并进 `request_params`。运行时通过 `llm.generate(..., temperature=0.3)` 传入的参数优先级最高。

@@ -133,6 +133,7 @@ class LLMService(Service):
         model: str | None = None,
         ctx: Contexts | None = None,
         session: Session | None = None,
+        extra_instructions: list[str] | None = None,
     ) -> GenericResponse[None]:
         """Generate a persisted response for Entari's chat session manager."""
         return await self._run_agent(
@@ -147,6 +148,7 @@ class LLMService(Service):
             request_params={},
             ctx=ctx,
             session=session,
+            extra_instructions=extra_instructions,
         )
 
     async def _run_agent(
@@ -163,6 +165,7 @@ class LLMService(Service):
         request_params: dict[str, Any],
         ctx: Contexts | None = None,
         session: Session | None = None,
+        extra_instructions: list[str] | None = None,
     ) -> GenericResponse[Any]:
         if output is not None and stream:
             raise ValueError("output is not supported when stream=True")
@@ -176,6 +179,11 @@ class LLMService(Service):
             instructions = None
         else:
             instructions = model_config.prompt or _conf.prompt or None
+
+        if extra_instructions:
+            extra = "\n\n".join(item for item in extra_instructions if item)
+            if extra:
+                instructions = f"{instructions}\n\n{extra}" if instructions else extra
 
         if variables:
             variable_instructions = "下列是用以辅助你思考回答的变量：\n" + "\n".join(

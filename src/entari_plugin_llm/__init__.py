@@ -24,8 +24,16 @@ metadata(
 )
 declare_static()
 
+from .capabilities import supports_vision as supports_vision
+from .config import get_model_config as get_model_config
+from .event import LLMResponseEvent as LLMResponseEvent
+from .event import collect_vars as collect_vars
+from .locks import SessionLocks as SessionLocks
+from .locks import owner_lock_key as owner_lock_key
 from .response import GenericResponse as GenericResponse
 from .service import llm as llm
+from .sessions import SessionInfo as SessionInfo
+from .sessions import resolve_session_owner as resolve_session_owner
 
 load_tools(_conf.tools)
 
@@ -41,5 +49,13 @@ __all__ = [
     "register_tool",
     "LLMCollectVariableEvent",
     "LLMToolEvent",
+    "LLMResponseEvent",
+    "collect_vars",
+    "supports_vision",
+    "get_model_config",
+    "resolve_session_owner",
+    "SessionInfo",
+    "SessionLocks",
+    "owner_lock_key",
     "GenericResponse",
 ]
