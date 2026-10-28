@@ -65,7 +65,7 @@ class ScopedModel(BasicConfModel):
         self.skills = _coerce_skill_refs(self.skills)
 
 
-class Chance:
+class Chance(BasicConfModel):
     value: float
     """概率值，范围为 0 到 1"""
     platform: str
