@@ -168,6 +168,8 @@ When a `<message>` element appears, the preceding elements are immediately treat
 hello<message/>world
 ```
 
+**Usually, `<message>` is unnecessary because you can send plain-text directly, except for the following cases:**
+
 Some platforms allow you to simulate messages sent by other users:
 
 ```html

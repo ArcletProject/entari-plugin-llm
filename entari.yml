@@ -89,12 +89,17 @@ plugins:
         enable_research: false
         text: true
         text_length_limit: 1000
+      ::no_reply: {}
+    memory:
+      enabled: true
+    group_context_limit: 20
 
     prompt: |
       1. 你是一个由用户提供信息并回答问题的智能助手。请根据用户提供的信息，尽可能准确和简洁地回答他们的问题。
       2. 如果信息不足以回答问题，请礼貌地告知用户需要更多信息。
       3. 如果你的回答超过了30字，请将你的回答进行分段，然后调用 `split_answer_send` 工具将多段回答进行发送。
       4. 然后，语气根据变量：亲密度 (`trust`) 来衡量，亲密度高就表现的可爱一些，反之则冷淡一点。
+      5. 如果会话中有不懂的内容，尝试使用网络搜索工具确认含义。
 
   example_tools: {}
   zssm: {}

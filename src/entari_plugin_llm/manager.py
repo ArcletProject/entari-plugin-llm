@@ -14,6 +14,7 @@ from .config import _conf, get_model_config
 from .context import group_context
 from .event import LLMCollectVariableEvent, LLMResponseEvent
 from .locks import owner_lock_key, session_locks
+from .log import logger
 from .service import llm
 from .sessions import SessionInfo, resolve_session_owner
 
@@ -106,13 +107,27 @@ class LLMSessionManager:
         selected_model = llm_session.model or model or get_model_config(None, session.channel.id).name
         text = unescape(str(user_prompt))
         if session.channel_type == ChannelType.TEXT:
+            event = session.session.event
+            sender_name = (
+                (event.member.nick if event.member else None)
+                or session.user_name
+                or ((event.user.nick or event.user.name) if event.user else None)
+            )
+            sender = str(session.user_id) if not sender_name else f"{sender_name}({session.user_id})"
+            text = f"sender {sender}: {text}"
             context = group_context.consume(
                 str(owner),
                 current_id=_current_message_id(session),
                 limit=_conf.group_context_limit,
             )
-            if context:
-                text = f"{context}\n\n[当前消息]\n{text}" if text else context
+            if addressed:
+                text = f"{context}\n\n[当前消息]\n{text}" if context else text
+            else:
+                notice = (
+                    "[当前消息不是对你发的。你应该作为一位旁观者来选择是否参与对话。如果你判断这条消息不需要你回应，"
+                    "请调用 no_reply 工具结束本轮，不要发送任何内容。]"
+                )
+                text = f"{context}\n\n{notice}\n{text}" if context else f"{notice}\n{text}"
 
         content: list[dict[str, Any]] = []
         if text:
@@ -120,6 +135,7 @@ class LLMSessionManager:
         if user_prompt.has(Image) and supports_vision(get_model_config(selected_model)):
             for image in list(user_prompt.select(Image)):
                 content.append({"type": "image_url", "image_url": {"url": image.src}})
+        logger.debug("LLM content: {}", content)
         user_message = Message(
             role="user",
             content=content,
@@ -127,11 +143,6 @@ class LLMSessionManager:
         )
 
         collect_event = LLMCollectVariableEvent(session.internal, llm_session, user_prompt)
-        if not addressed:
-            collect_event.instructions.append(
-                "当前消息并没有明确叫到你。如果你判断这条消息不需要你回应，"
-                "请调用 no_reply 工具结束本轮，不要发送任何内容；只有确实能提供帮助时才回复。"
-            )
         variables: dict[str, Any] = {}
         async for result in waterfall(collect_event, inherit_ctx=ctx):
             variables.update(result.value)

@@ -8,6 +8,7 @@ around and reuse it when the image is stripped from the history.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from arclet.entari.localdata import local_data
 
@@ -16,7 +17,8 @@ _MAX_URL_LENGTH = 2048
 _cache: dict[str, str] | None = None
 
 
-_store_path = local_data.get_data_file("entari_plugin_llm", "image_descriptions.json")
+def _store_path() -> Path:
+    return local_data.get_data_file("entari_plugin_llm", "image_descriptions.json")
 
 
 def _load() -> dict[str, str]:
@@ -25,8 +27,8 @@ def _load() -> dict[str, str]:
         return _cache
 
     try:
-        data = json.loads(_store_path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
+        data = json.loads(_store_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
         _cache = {}
         return _cache
 
@@ -42,7 +44,7 @@ def _save() -> None:
     if _cache is None:
         return
     try:
-        path = _store_path
+        path = _store_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(

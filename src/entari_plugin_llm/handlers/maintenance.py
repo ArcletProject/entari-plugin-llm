@@ -6,10 +6,11 @@ from arclet.entari.scheduler import every
 
 from ..log import logger
 from ..manager import LLMSessionManager
+from ..service import LLMService
 
 
 @plugin.listen(Startup)
-async def cleanup_on_startup():
+async def cleanup_on_startup(_: LLMService):
     try:
         deleted = await LLMSessionManager.cleanup_expired()
         if deleted:

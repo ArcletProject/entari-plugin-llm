@@ -380,6 +380,11 @@ class LLMService(Service):
             self.start_time = time.time()
             db_path = local_data.get_data_file("entari_plugin_llm", "agno.db")
             self._db = AsyncSqliteDb(db_file=str(db_path))
+            # Agno 只在 OS app 中调用 _create_all_tables()；普通会话/run 表因为
+            # 各自传了 create_table_if_not_found=True 会自动创建，但 memories
+            # 表不会。缺失时 upsert_user_memory() 会静默丢弃写入，所以这里
+            # 主动补齐（幂等）。
+            await self._db._create_all_tables()
             self._sessions = AgnoSessionStore(self._db, self.id)
 
         async with self.stage("blocking"):

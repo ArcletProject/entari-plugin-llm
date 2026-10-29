@@ -41,6 +41,8 @@ def _coerce_skill_refs(value: list[SkillRef] | None) -> list[SkillRef] | None:
 
 
 class ScopedModel(BasicConfModel):
+    """配置模型及其各自设置"""
+
     name: str
     """模型名称（或 `provider/model` 形式的旧版 LiteLLM 写法）"""
     alias: str | None = None
@@ -66,6 +68,8 @@ class ScopedModel(BasicConfModel):
 
 
 class Chance(BasicConfModel):
+    """概率配置"""
+
     value: float
     """概率值，范围为 0 到 1"""
     platform: str
@@ -75,6 +79,8 @@ class Chance(BasicConfModel):
 
 
 class MemoryConfig(BasicConfModel):
+    """长期记忆配置"""
+
     enabled: bool = False
     """是否启用 Agno 长期记忆。群聊按频道共享，私聊按用户隔离"""
     mode: Literal["auto", "agentic"] = "auto"
