@@ -7,6 +7,7 @@ from agno.models.message import Message
 from arclet.entari import ChannelType, Image, MessageChain
 from arclet.letoderea import Contexts, waterfall
 from entari_plugin_user import UserSession  # entari: plugin
+from satori.parser import unescape
 
 from .capabilities import supports_vision
 from .config import _conf, get_model_config
@@ -56,6 +57,13 @@ class LLMSessionManager:
             return await llm.session_store.list(user_id)
 
     @classmethod
+    async def cleanup_expired(cls) -> int:
+        ttl = _conf.session_ttl_days
+        if not ttl or ttl <= 0:
+            return 0
+        return await llm.session_store.delete_expired(ttl)
+
+    @classmethod
     async def chat(
         cls,
         user_prompt: MessageChain,
@@ -64,7 +72,8 @@ class LLMSessionManager:
         ctx: Contexts,
         model: str | None = None,
         new: bool = False,
-    ) -> str:
+        addressed: bool = True,
+    ) -> str | None:
         owner = resolve_session_owner(session)
         async with session_locks.acquire(owner_lock_key(owner)):
             return await cls._chat_locked(
@@ -74,6 +83,7 @@ class LLMSessionManager:
                 model=model,
                 new=new,
                 owner=owner,
+                addressed=addressed,
             )
 
     @classmethod
@@ -86,14 +96,15 @@ class LLMSessionManager:
         model: str | None,
         new: bool,
         owner: int | str,
-    ) -> str:
+        addressed: bool,
+    ) -> str | None:
         llm_session = None if new else await llm.session_store.current(owner)
         if llm_session is None:
             selected_model = model or get_model_config(None, session.channel.id).name
             llm_session = await llm.session_store.create(owner, selected_model)
 
         selected_model = llm_session.model or model or get_model_config(None, session.channel.id).name
-        text = user_prompt.extract_plain_text()
+        text = unescape(str(user_prompt))
         if session.channel_type == ChannelType.TEXT:
             context = group_context.consume(
                 str(owner),
@@ -116,6 +127,11 @@ class LLMSessionManager:
         )
 
         collect_event = LLMCollectVariableEvent(session.internal, llm_session, user_prompt)
+        if not addressed:
+            collect_event.instructions.append(
+                "当前消息并没有明确叫到你。如果你判断这条消息不需要你回应，"
+                "请调用 no_reply 工具结束本轮，不要发送任何内容；只有确实能提供帮助时才回复。"
+            )
         variables: dict[str, Any] = {}
         async for result in waterfall(collect_event, inherit_ctx=ctx):
             variables.update(result.value)
@@ -128,17 +144,17 @@ class LLMSessionManager:
             session=session.internal,
             ctx=ctx,
             extra_instructions=list(collect_event.instructions),
+            allow_silent=not addressed,
         )
         if response.stopped:
-            final_answer = "[END_OF_RESPONSE]"
-        else:
-            final_answer = response.content or ""
+            return None if not addressed else "[END_OF_RESPONSE]"
+        final_answer = response.content or ""
         if not final_answer:
-            return "对话失败，请稍后再试"
+            return None if not addressed else "对话失败，请稍后再试"
         return str(final_answer)
 
     @classmethod
-    async def send_answer(cls, session: UserSession, answer: str, ctx: Contexts) -> None:
+    async def send_answer(cls, session: UserSession, answer: str | None, ctx: Contexts) -> None:
         """发送 LLM 回复，允许插件通过 LLMResponseEvent 替换或拦截。"""
         if not answer or answer == "[END_OF_RESPONSE]":
             return

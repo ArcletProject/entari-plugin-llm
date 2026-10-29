@@ -317,7 +317,8 @@ def _register_tool(_, sub: Subscriber):
     return True
 
 
-def get_agno_tools() -> tuple[list[Toolkit | Function], ToolExecutors]:
+def get_agno_tools(exclude: set[str] | None = None) -> tuple[list[Toolkit | Function], ToolExecutors]:
+    excluded = exclude or set()
     tools: list[Toolkit | Function] = []
     tool_owners: dict[str, str] = {}
     for path, toolkit_type in agno_tool_types.items():
@@ -329,7 +330,12 @@ def get_agno_tools() -> tuple[list[Toolkit | Function], ToolExecutors]:
         except ImportError as e:
             logger.warning(f"Agno tool {path} is unavailable: {e}")
             continue
+        for name in excluded:
+            toolkit.functions.pop(name, None)
+            toolkit.async_functions.pop(name, None)
         for function in toolkit.get_async_functions().values():
+            if function.name in excluded:
+                continue
             if function.name in tool_owners:
                 raise ValueError(
                     f"Tool name {function.name!r} conflicts between {tool_owners[function.name]} and {path}"
@@ -357,6 +363,8 @@ def get_agno_tools() -> tuple[list[Toolkit | Function], ToolExecutors]:
             continue
 
         name = registered.function.name
+        if name in excluded:
+            continue
         if name in tool_owners:
             raise ValueError(f"Tool name {name!r} conflicts between {tool_owners[name]} and {registered.plugin_id}")
 

@@ -15,6 +15,9 @@ from launart.status import Phase
 
 from .capabilities import supports_vision
 from .config import ScopedModel, _conf, get_model_config
+from .history import strip_history_media
+from .image_memory import remember_image
+from .memory import build_memory_manager
 from .model_factory import create_model
 from .pricing import resolve_metrics_cost
 from .response import GenericResponse
@@ -134,6 +137,7 @@ class LLMService(Service):
         ctx: Contexts | None = None,
         session: Session | None = None,
         extra_instructions: list[str] | None = None,
+        allow_silent: bool = False,
     ) -> GenericResponse[None]:
         """Generate a persisted response for Entari's chat session manager."""
         return await self._run_agent(
@@ -149,6 +153,7 @@ class LLMService(Service):
             ctx=ctx,
             session=session,
             extra_instructions=extra_instructions,
+            allow_silent=allow_silent,
         )
 
     async def _run_agent(
@@ -166,12 +171,13 @@ class LLMService(Service):
         ctx: Contexts | None = None,
         session: Session | None = None,
         extra_instructions: list[str] | None = None,
+        allow_silent: bool = False,
     ) -> GenericResponse[Any]:
         if output is not None and stream:
             raise ValueError("output is not supported when stream=True")
 
         model_config = get_model_config(model)
-        tools, executors = get_agno_tools()
+        tools, executors = get_agno_tools(exclude=None if allow_silent else {"no_reply"})
 
         if system is not None:
             instructions = system
@@ -220,6 +226,18 @@ class LLMService(Service):
                 agent_kwargs["num_history_messages"] = _conf.history_limit
             if _conf.max_tool_calls_from_history is not None:
                 agent_kwargs["max_tool_calls_from_history"] = _conf.max_tool_calls_from_history
+
+            memory_manager = build_memory_manager(self._db, _conf.memory)
+            if memory_manager is not None:
+                agent_kwargs["memory_manager"] = memory_manager
+                if _conf.memory.mode == "agentic":
+                    agent_kwargs["enable_agentic_memory"] = True
+                else:
+                    agent_kwargs["update_memory_on_run"] = True
+
+        if _conf.strip_history_media:
+            agent_kwargs["store_media"] = False
+            agent_kwargs["pre_hooks"] = [strip_history_media]
 
         agent = Agent(**agent_kwargs)
         if stream:
@@ -352,7 +370,10 @@ class LLMService(Service):
                 {"type": "image_url", "image_url": {"url": url}},
             ],
         )
-        return await self.generate([message], system=system, model=model_config.name)
+        response = await self.generate([message], system=system, model=model_config.name)
+        if isinstance(response.content, str) and response.content:
+            remember_image(url, response.content)
+        return response
 
     async def launch(self, manager: Launart) -> None:
         async with self.stage("preparing"):

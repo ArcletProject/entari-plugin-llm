@@ -40,6 +40,7 @@ load_tools(_conf.tools)
 from .handlers import chat as chat
 from .handlers import check as check
 from .handlers import command as command
+from .handlers import maintenance as maintenance
 
 __all__ = [
     "llm",

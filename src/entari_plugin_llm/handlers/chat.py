@@ -1,7 +1,7 @@
 import random
 from collections import deque
 
-from arclet.entari import ChannelType, MessageChain, MessageCreatedEvent, Session, metadata, Reply
+from arclet.entari import ChannelType, MessageChain, MessageCreatedEvent, Reply, Session, metadata
 from arclet.entari.config import config_model_keys, config_model_validate
 from arclet.entari.event.config import ConfigReload
 from arclet.entari.event.send import SendResponse
@@ -76,6 +76,7 @@ async def run_conversation(
             content,
             session=session,
             ctx=ctx,
+            addressed=bool(is_reply_me or is_notice_me),
         )
         await LLMSessionManager.send_answer(session, answer, ctx)
     except ModelNotFoundError as e:

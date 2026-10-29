@@ -74,6 +74,17 @@ class Chance(BasicConfModel):
     """适用的频道列表。['*'] 表示所有频道。"""
 
 
+class MemoryConfig(BasicConfModel):
+    enabled: bool = False
+    """是否启用 Agno 长期记忆。群聊按频道共享，私聊按用户隔离"""
+    mode: Literal["auto", "agentic"] = "auto"
+    """auto: 每轮结束后由模型自动抽取；agentic: 由模型通过工具主动增删改"""
+    model: str | None = None
+    """抽取记忆使用的模型别名。未设置时复用当前对话模型"""
+    max_memories: int = 50
+    """最多注入多少条记忆，按最近更新排序。0 表示不限制"""
+
+
 class Config(BasicConfModel, extra="allow"):
     api_key: str | None = None
     """用于使用 OpenAI API 进行身份验证的全局 API 密钥。用作没有特定键的模型的后备"""
@@ -95,9 +106,20 @@ class Config(BasicConfModel, extra="allow"):
     """限制历史上下文中的工具调用数量。如果未设置，则没有限制"""
     chance_of_full_chat: float | list[Chance] = 0.5
     """在群聊中，触发完整对话的概率。0 表示关闭，1 表示总是触发完整对话"""
+    memory: MemoryConfig = model_field(default_factory=MemoryConfig)
+    """长期记忆配置"""
+    session_ttl_days: float | None = 30.0
+    """会话空闲多少天后自动删除。None 或 0 表示不清理"""
+    strip_history_media: bool = True
+    """是否在带历史记录运行前移除历史消息中的图片，避免过期链接导致请求失败"""
+    silent_reply: bool = True
+    """是否允许机器人在未被明确叫到时调用 no_reply 工具结束本轮"""
 
     def _reload_tools(self):
         loaded_tools: dict[str, dict[str, Any]] = {}
+
+        if self.silent_reply and not any(key.lstrip("~?") == "::no_reply" for key in self.tools):
+            self.tools["::no_reply"] = {}
 
         for key, value in self.tools.items():
             if key.startswith("$"):
@@ -133,6 +155,10 @@ class Config(BasicConfModel, extra="allow"):
     def __post_init__(self):
         if self.group_context_limit < 0:
             raise ValueError("group_context_limit must be a non-negative integer")
+        if self.memory.max_memories < 0:
+            raise ValueError("memory.max_memories must be a non-negative integer")
+        if self.session_ttl_days is not None and self.session_ttl_days < 0:
+            raise ValueError("session_ttl_days must be a non-negative number")
         self.skills = _coerce_skill_refs(self.skills) or []
         self._reload_tools()
 

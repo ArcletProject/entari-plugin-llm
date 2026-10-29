@@ -21,6 +21,7 @@ from ._jsondata import (
 )
 from .config import get_model_config, get_model_list
 from .exception import NewSessionExistsError
+from .locks import owner_lock_key, session_locks
 from .pricing import resolve_metrics_cost
 
 
@@ -29,6 +30,12 @@ def resolve_session_owner(session: UserSession) -> int | str:
     if session.channel_type == ChannelType.TEXT:
         return f"{session.platform}:{session.channel.id}"
     return session.user_id
+
+
+def owner_from_stored(user_id: str) -> int | str:
+    """Agno 以字符串保存 user_id；私聊转回 int 才能与运行时锁键一致。"""
+    value = user_id.lstrip("-")
+    return int(user_id) if value.isdigit() else user_id
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +49,7 @@ class SessionInfo:
     total_tokens: int
     message_count: int
     created_at: datetime
+    updated_at: datetime
     summary: str | None = None
     total_cost: float | None = None
 
@@ -142,6 +150,41 @@ class AgnoSessionStore:
                 clear_current_session(user_id)
         return deleted
 
+    async def delete_expired(self, ttl_days: float) -> int:
+        """Delete sessions idle for longer than ``ttl_days`` and return the count."""
+        if ttl_days <= 0 or self.db is None:
+            return 0
+
+        cutoff = int(time.time() - ttl_days * 86400)
+        rows = await self.db.get_sessions(
+            session_type=SessionType.AGENT,
+            component_id=self.agent_id,
+            include_runs=False,
+        )
+        if isinstance(rows, tuple):
+            rows = rows[0]
+
+        deleted = 0
+        for session in rows:
+            if not isinstance(session, AgentSession):
+                continue
+            updated_at = session.updated_at or session.created_at or 0
+            if updated_at >= cutoff:
+                continue
+
+            stored_user_id = session.user_id or ""
+            if not stored_user_id:
+                continue
+            owner = owner_from_stored(stored_user_id)
+            async with session_locks.acquire(owner_lock_key(owner)):
+                pointer = get_current_session(owner)
+                if await self.db.delete_session(session.session_id, user_id=stored_user_id):
+                    clear_session_model(session.session_id)
+                    if pointer is not None and pointer.session_id == session.session_id:
+                        clear_current_session(owner)
+                    deleted += 1
+        return deleted
+
     async def _get_user_sessions(self, user_id: int | str) -> list[AgentSession]:
         rows = await self.db.get_sessions(
             session_type=SessionType.AGENT,
@@ -195,6 +238,7 @@ class AgnoSessionStore:
             total_tokens=total_tokens,
             message_count=message_count,
             created_at=datetime.fromtimestamp(session.created_at or 0),
+            updated_at=datetime.fromtimestamp(session.updated_at or session.created_at or 0),
             summary=summary_text,
             total_cost=total_cost,
         )
@@ -225,5 +269,6 @@ class AgnoSessionStore:
             total_tokens=0,
             message_count=0,
             created_at=datetime.fromtimestamp(created_at),
+            updated_at=datetime.fromtimestamp(created_at),
             total_cost=None,
         )

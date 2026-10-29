@@ -4,6 +4,25 @@ from entari_plugin_llm import llm, register_tool
 
 
 @register_tool
+async def image_url_vision(url: str) -> str | None:
+    """
+    识别图片链接给出的图片内容并返回描述
+
+    Args:
+        url: str: 图片的URL地址
+    Returns:
+        图片内容的描述。为空表示工具执行已暂停
+    """
+    try:
+        resp = await llm.vision(url)
+    except RuntimeError:
+        return "无法识别图片内容"
+    if resp.stopped:
+        return
+    return resp.content or "无法识别图片内容"
+
+
+@register_tool
 async def image_vision(session: Session, index: int = 0) -> str | None:
     """
     从会话中识别图片中的内容并返回描述
