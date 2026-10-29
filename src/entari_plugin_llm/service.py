@@ -69,6 +69,7 @@ class LLMService(Service):
         model: str | None = None,
         output: type[TOutput],
         ignore_user_prompt: bool = False,
+        use_tools: bool = True,
         **kwargs: Any,
     ) -> GenericResponse[TOutput]: ...
 
@@ -83,6 +84,7 @@ class LLMService(Service):
         model: str | None = None,
         output: Literal["json_object"] | dict[str, Any],
         ignore_user_prompt: bool = False,
+        use_tools: bool = True,
         **kwargs: Any,
     ) -> GenericResponse[Any]: ...
 
@@ -97,6 +99,7 @@ class LLMService(Service):
         model: str | None = None,
         output: None = None,
         ignore_user_prompt: bool = False,
+        use_tools: bool = True,
         **kwargs: Any,
     ) -> GenericResponse[None]: ...
 
@@ -110,6 +113,7 @@ class LLMService(Service):
         model: str | None = None,
         output: OutputType | None = None,
         ignore_user_prompt: bool = False,
+        use_tools: bool = True,
         **kwargs: Any,
     ) -> GenericResponse[Any]:
         """Generate a stateless LLM response through an Agno Agent."""
@@ -124,6 +128,7 @@ class LLMService(Service):
             output=output,
             llm_session=None,
             ignore_user_prompt=ignore_user_prompt,
+            use_tools=use_tools,
             request_params=kwargs,
         )
 
@@ -172,12 +177,16 @@ class LLMService(Service):
         session: Session | None = None,
         extra_instructions: list[str] | None = None,
         allow_silent: bool = False,
+        use_tools: bool = True,
     ) -> GenericResponse[Any]:
         if output is not None and stream:
             raise ValueError("output is not supported when stream=True")
 
         model_config = get_model_config(model)
-        tools, executors = get_agno_tools(exclude=None if allow_silent else {"no_reply"})
+        if use_tools:
+            tools, executors = get_agno_tools(exclude=None if allow_silent else {"no_reply"})
+        else:
+            tools, executors = [], {}
 
         if system is not None:
             instructions = system
@@ -370,7 +379,7 @@ class LLMService(Service):
                 {"type": "image_url", "image_url": {"url": url}},
             ],
         )
-        response = await self.generate([message], system=system, model=model_config.name)
+        response = await self.generate([message], system=system, model=model_config.name, use_tools=False)
         if isinstance(response.content, str) and response.content:
             remember_image(url, response.content)
         return response
