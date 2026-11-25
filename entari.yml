@@ -76,21 +76,10 @@ plugins:
     tools:
       ::generic: {}
       ::plugin_manager: {}
-      ::webpage_processor: {}
+      # ::webpage_processor: {}
       ::deepseek_web:
         api_key: ${{ env.DEEPSEEK_API_KEY }}
       ::agno.tools.calculator.CalculatorTools: {}
-      ::agno.tools.exa.ExaTools:
-        $call_limit: 4
-        # https://docs.agno.com/tools/toolkits/search/exa
-        api_key: ${{ env.EXA_API_KEY }}
-        enable_search: true
-        enable_get_contents: true
-        enable_find_similar: true
-        enable_answer: true
-        enable_research: false
-        text: true
-        text_length_limit: 1000
       ::no_reply: {}
     memory:
       enabled: true
