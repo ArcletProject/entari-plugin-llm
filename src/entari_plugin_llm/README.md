@@ -285,6 +285,19 @@ resp = await llm.generate("Hello world")
 
 - 插件将符合 arclet.letoderea 订阅器规范的函数自动注册为可被 LLM 调用的工具。
 - 工具的参数与文档由函数的 docstring 与类型注解自动生成 JSON Schema，以便 LLM 在函数调用时进行参数填充。
+- 内置工具通过 `tools` 配置启用。例如 DeepSeek 搜索与网页抓取：
+
+  ```yaml
+  tools:
+    ::deepseek_web:
+      api_key: ${{ env.DEEPSEEK_API_KEY }}  # 单独配置，不会复用 models 中的 api_key
+      count: 5                              # 搜索默认返回条数，1～50
+      need_content: false                   # 搜索时是否默认附带网页正文
+  ```
+
+  启用后提供两个工具：`deepseek_search`（Query 搜索，支持 `site:`、`lang:`、`after:` 等语法）和
+  `deepseek_fetch`（抓取单个链接并以 Markdown 返回正文）。两者均调用 `https://api.deepseek.com`
+  的官方 Search / Fetch API，失败时会把错误信息作为工具结果返回给模型。
 
 ### 配置与热重载
 

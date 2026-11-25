@@ -77,6 +77,8 @@ plugins:
       ::generic: {}
       ::plugin_manager: {}
       ::webpage_processor: {}
+      ::deepseek_web:
+        api_key: ${{ env.DEEPSEEK_API_KEY }}
       ::agno.tools.calculator.CalculatorTools: {}
       ::agno.tools.exa.ExaTools:
         $call_limit: 4
